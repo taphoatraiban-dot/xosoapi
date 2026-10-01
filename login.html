@@ -246,11 +246,7 @@ $("forgot").onclick = async () => {
 };
 
 function showDashboard(user){
-  $("authCard").style.display = "none";
-  $("dashboard").style.display = "block";
-  $("dashEmail").textContent = user?.email || "-";
-  $("dashUid").textContent = user?.id || "-";
-}
+ window.location.href = "./dashboard.html";}
 
 $("logoutBtn").onclick = async () => {
   if(sb) await sb.auth.signOut();
