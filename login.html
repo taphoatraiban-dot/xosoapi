@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOSOAPI — Đăng nhập</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#07111f;--panel:#0e1a2b;--panel2:#122238;--text:#f4f7fb;--muted:#8fa0b7;
+  --line:#233853;--green:#13d48e;--cyan:#11bcd4;--blue:#2d6df6;--red:#ef4444;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 85% 12%,rgba(17,188,212,.16),transparent 28%),
+    radial-gradient(circle at 12% 86%,rgba(19,212,142,.10),transparent 24%),
+    var(--bg);
+}
+.topbar{
+  height:86px;border-bottom:1px solid rgba(143,160,183,.16);display:flex;align-items:center;
+  justify-content:space-between;padding:0 26px;background:rgba(5,13,25,.82);backdrop-filter:blur(12px);
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:22px}
+.logo{
+  width:50px;height:50px;border-radius:15px;display:grid;place-items:center;font-size:26px;
+  background:linear-gradient(135deg,#14d89a,#14a9dc);box-shadow:0 12px 32px rgba(17,188,212,.22);
+}
+.menu{font-size:30px;color:#8191a8}
+.wrap{max-width:720px;margin:44px auto;padding:0 20px 60px}
+.card{
+  border:1px solid rgba(143,160,183,.28);border-radius:26px;padding:30px;
+  background:linear-gradient(180deg,rgba(20,37,58,.88),rgba(12,26,43,.94));
+  box-shadow:0 28px 70px rgba(0,0,0,.28);
+}
+.icon{
+  width:102px;height:102px;margin:0 auto 18px;border-radius:24px;display:grid;place-items:center;
+  font-size:50px;background:linear-gradient(135deg,#16d897,#12b8d7);
+  box-shadow:0 18px 50px rgba(16,205,176,.20);
+}
+h1{text-align:center;font-size:38px;margin:0 0 10px}
+.subtitle{text-align:center;color:var(--muted);font-size:19px;margin-bottom:30px}
+.tabs{display:flex;gap:8px;background:#0a1524;border:1px solid var(--line);padding:6px;border-radius:14px;margin-bottom:24px}
+.tab{flex:1;border:0;border-radius:10px;padding:12px;font-size:16px;font-weight:800;cursor:pointer;background:transparent;color:#95a7be}
+.tab.active{background:#153050;color:#fff}
+.field{margin-bottom:18px}
+label{display:block;color:#d7e0ec;font-weight:700;margin-bottom:8px}
+.inputwrap{position:relative}
+input{
+  width:100%;padding:16px 48px 16px 16px;border-radius:14px;border:1px solid #2a415f;
+  background:rgba(255,255,255,.035);color:#fff;font-size:17px;outline:none;
+}
+input:focus{border-color:#1dc59b;box-shadow:0 0 0 3px rgba(29,197,155,.09)}
+.eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);border:0;background:none;color:#9bb0c8;font-size:20px;cursor:pointer}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:6px 0 18px}
+.link{color:#25dfa4;text-decoration:none;cursor:pointer}
+.primary{
+  width:100%;border:0;border-radius:14px;padding:16px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;
+  background:linear-gradient(90deg,#13cf91,#14c983);box-shadow:0 14px 34px rgba(19,207,145,.18);
+}
+.primary:disabled{opacity:.55;cursor:wait}
+.msg{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;font-weight:700;line-height:1.45}
+.msg.ok{display:block;background:#0b3424;border:1px solid #176b49;color:#83f2bd}
+.msg.err{display:block;background:#3b1515;border:1px solid #7f1d1d;color:#fecaca}
+.note{
+  margin-top:20px;padding:14px;border-radius:12px;background:#0a1524;border:1px solid var(--line);
+  color:#9eb0c6;font-size:13px;line-height:1.55
+}
+.dashboard{display:none}
+.dash-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{padding:8px 12px;border-radius:999px;background:#0b3424;color:#83f2bd;border:1px solid #176b49;font-weight:800}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.box{background:#0a1524;border:1px solid var(--line);border-radius:16px;padding:16px}
+.box b{display:block;color:#90a3ba;font-size:13px;margin-bottom:7px}
+.box span{word-break:break-word}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.btn{padding:12px 15px;border-radius:12px;border:1px solid var(--line);background:#142238;color:#fff;font-weight:800;text-decoration:none;cursor:pointer}
+.btn.green{background:#0f9f71;border-color:#0f9f71}
+.footer{text-align:center;color:#6f829a;margin-top:34px;font-size:14px}
+@media(max-width:620px){
+  .topbar{height:76px;padding:0 16px}.brand{font-size:18px}.logo{width:44px;height:44px}
+  .wrap{margin-top:28px;padding:0 14px 42px}.card{padding:22px 18px;border-radius:22px}
+  h1{font-size:32px}.subtitle{font-size:17px}.grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="logo">✦</div><span>XOSOAPI</span></div>
+  <div class="menu">☰</div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="authCard">
+    <div class="icon">↪</div>
+    <h1 id="title">Đăng Nhập</h1>
+    <div class="subtitle" id="subtitle">Chào mừng quay trở lại!</div>
+
+    <div class="tabs">
+      <button class="tab active" id="loginTab">Đăng nhập</button>
+      <button class="tab" id="signupTab">Đăng ký</button>
+    </div>
+
+    <div id="nameField" class="field" style="display:none">
+      <label>Họ tên</label>
+      <input id="name" type="text" placeholder="Tên của bạn">
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="email@example.com" autocomplete="email">
+    </div>
+
+    <div class="field">
+      <label>Mật khẩu</label>
+      <div class="inputwrap">
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+        <button class="eye" id="togglePass" type="button">◉</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span></span>
+      <a class="link" id="forgot">Quên mật khẩu?</a>
+    </div>
+
+    <button class="primary" id="submitBtn">Đăng Nhập →</button>
+    <div id="msg" class="msg"></div>
+
+    <div class="note">
+      Trang này đã chuẩn bị sẵn kết nối Supabase Auth. Chỉ còn điền <b>Supabase Publishable/Anon Key</b>
+      vào phần cấu hình trong file để bật đăng nhập thật.
+    </div>
+  </section>
+
+  <section class="card dashboard" id="dashboard">
+    <div class="dash-head">
+      <div>
+        <h1 style="text-align:left;font-size:30px">XOSOAPI Dashboard</h1>
+        <div class="subtitle" style="text-align:left;margin:4px 0 0">Quản lý tài khoản và truy cập API.</div>
+      </div>
+      <span class="pill">● Đã đăng nhập</span>
+    </div>
+
+    <div class="grid">
+      <div class="box"><b>Email</b><span id="dashEmail">-</span></div>
+      <div class="box"><b>User ID</b><span id="dashUid">-</span></div>
+      <div class="box"><b>API</b><span>MN / MT / MB</span></div>
+      <div class="box"><b>Giới hạn</b><span>60 request/phút</span></div>
+    </div>
+
+    <div class="actions">
+      <a class="btn green" href="./test.html">🧪 Test API</a>
+      <a class="btn" href="./">📘 Tài liệu API</a>
+      <button class="btn" id="logoutBtn">Đăng xuất</button>
+    </div>
+  </section>
+
+  <div class="footer">XOSOAPI • Supabase Auth • API riêng của bạn</div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://zigpqddlhvjbjrwhfhaa.supabase.co";
+
+// DÁN SUPABASE PUBLISHABLE/ANON KEY VÀO ĐÂY:
+const SUPABASE_ANON_KEY = "PASTE_SUPABASE_ANON_KEY_HERE";
+
+const configured = SUPABASE_ANON_KEY !== "PASTE_SUPABASE_ANON_KEY_HERE";
+const sb = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+let mode = "login";
+
+const $ = id => document.getElementById(id);
+const loginTab = $("loginTab"), signupTab = $("signupTab"), nameField = $("nameField");
+const title = $("title"), subtitle = $("subtitle"), submitBtn = $("submitBtn"), msg = $("msg");
+
+function showMsg(text, kind="err"){
+  msg.className = "msg " + kind;
+  msg.textContent = text;
+}
+function clearMsg(){ msg.className="msg"; msg.textContent=""; }
+
+function setMode(next){
+  mode = next; clearMsg();
+  const signup = next === "signup";
+  loginTab.classList.toggle("active", !signup);
+  signupTab.classList.toggle("active", signup);
+  nameField.style.display = signup ? "block" : "none";
+  title.textContent = signup ? "Đăng Ký" : "Đăng Nhập";
+  subtitle.textContent = signup ? "Tạo tài khoản XOSOAPI của bạn." : "Chào mừng quay trở lại!";
+  submitBtn.textContent = signup ? "Đăng Ký Miễn Phí →" : "Đăng Nhập →";
+}
+loginTab.onclick = () => setMode("login");
+signupTab.onclick = () => setMode("signup");
+
+$("togglePass").onclick = () => {
+  const p = $("password");
+  p.type = p.type === "password" ? "text" : "password";
+};
+
+submitBtn.onclick = async () => {
+  clearMsg();
+  if(!configured){
+    showMsg("Chưa cấu hình Supabase Publishable/Anon Key. Cần điền key trước khi đăng nhập thật.");
+    return;
+  }
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  if(!email || !password){ showMsg("Nhập đủ email và mật khẩu."); return; }
+
+  submitBtn.disabled = true;
+  try{
+    if(mode === "signup"){
+      const full_name = $("name").value.trim();
+      const { data, error } = await sb.auth.signUp({
+        email, password,
+        options:{ data:{ full_name } }
+      });
+      if(error) throw error;
+      showMsg(data.session ? "Đăng ký thành công." : "Đăng ký thành công. Kiểm tra email nếu Supabase yêu cầu xác nhận.", "ok");
+      if(data.session) showDashboard(data.user);
+    }else{
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      showDashboard(data.user);
+    }
+  }catch(e){
+    showMsg(e.message || String(e));
+  }finally{
+    submitBtn.disabled = false;
+  }
+};
+
+$("forgot").onclick = async () => {
+  clearMsg();
+  if(!configured){ showMsg("Chưa cấu hình Supabase Publishable/Anon Key."); return; }
+  const email = $("email").value.trim();
+  if(!email){ showMsg("Nhập email trước rồi bấm Quên mật khẩu."); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname
+  });
+  if(error) showMsg(error.message);
+  else showMsg("Đã gửi email đặt lại mật khẩu.", "ok");
+};
+
+function showDashboard(user){
+  $("authCard").style.display = "none";
+  $("dashboard").style.display = "block";
+  $("dashEmail").textContent = user?.email || "-";
+  $("dashUid").textContent = user?.id || "-";
+}
+
+$("logoutBtn").onclick = async () => {
+  if(sb) await sb.auth.signOut();
+  $("dashboard").style.display = "none";
+  $("authCard").style.display = "block";
+  setMode("login");
+};
+
+(async()=>{
+  if(!sb) return;
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session?.user) showDashboard(session.user);
+  sb.auth.onAuthStateChange((_event, session)=>{
+    if(session?.user) showDashboard(session.user);
+  });
+})();
+</script>
+</body>
+</html>
