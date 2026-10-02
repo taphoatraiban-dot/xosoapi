@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOSOAPI Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--panel:#0e1a2b;--panel2:#0a1524;--text:#f4f7fb;--muted:#8fa0b7;--line:#233853;--green:#13d48e;--red:#ef4444;--gold:#f4b740}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.top{height:76px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#08121f}
+.brand{font-size:21px;font-weight:900}
+.wrap{max-width:980px;margin:auto;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+h1,h2{margin:0 0 10px}.muted{color:var(--muted)}
+.btn{border:1px solid var(--line);background:#17263a;color:#fff;padding:11px 14px;border-radius:11px;font-weight:900;cursor:pointer}
+.btn.green{background:#0f9f71}.btn.red{background:#a12727}.btn:disabled{opacity:.55;cursor:not-allowed}
+.order{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.label{font-size:12px;color:var(--muted);margin-bottom:3px}.value{font-weight:800;word-break:break-word}
+.status{display:inline-block;padding:5px 9px;border-radius:999px;background:#3a2d09;color:#ffd977;font-weight:900;font-size:12px}
+.actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.notice{display:none;padding:12px;border-radius:12px;margin-top:12px}
+.notice.ok{display:block;background:#0b3424;border:1px solid #176b49;color:#83f2bd}
+.notice.err{display:block;background:#3b1515;border:1px solid #7f1d1d;color:#fecaca}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;margin-top:12px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.summary .box{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.summary .n{font-size:24px;font-weight:900}
+@media(max-width:650px){.grid,.summary{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">✦ XOSOAPI Admin</div>
+  <button class="btn" id="backBtn">Dashboard</button>
+</header>
+
+<main class="wrap">
+<section class="card">
+  <h1>Yêu cầu nâng cấp</h1>
+  <div class="muted" id="adminEmail">Đang kiểm tra quyền admin...</div>
+
+  <div class="summary">
+    <div class="box"><div class="label">Đơn chờ</div><div class="n" id="pendingCount">0</div></div>
+    <div class="box"><div class="label">Gói Pro</div><div class="n" id="proCount">0</div></div>
+    <div class="box"><div class="label">Gói Cơ Bản</div><div class="n" id="basicCount">0</div></div>
+  </div>
+
+  <div id="notice" class="notice"></div>
+  <div id="orders"></div>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL="https://zigpqddlhvjbjrwhfhaa.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const ordersEl=document.getElementById("orders");
+const notice=document.getElementById("notice");
+const adminEmail=document.getElementById("adminEmail");
+const pendingCount=document.getElementById("pendingCount");
+const proCount=document.getElementById("proCount");
+const basicCount=document.getElementById("basicCount");
+
+document.getElementById("backBtn").onclick=()=>location.href="./dashboard.html";
+
+function showNotice(t,k="err"){notice.className="notice "+k;notice.textContent=t}
+function clearNotice(){notice.className="notice";notice.textContent=""}
+function fmt(n){return Number(n||0).toLocaleString("vi-VN")}
+function fmtDate(v){if(!v)return "-";try{return new Date(v).toLocaleString("vi-VN")}catch{return v}}
+
+async function isAdmin(user){
+  const {data,error}=await sb.from("admin_users")
+    .select("user_id")
+    .eq("user_id",user.id)
+    .maybeSingle();
+  return !error && !!data;
+}
+
+async function approve(id,btn){
+  if(!confirm("Duyệt đơn #"+id+"?")) return;
+  clearNotice();
+  btn.disabled=true;
+  btn.textContent="Đang duyệt...";
+  const {error}=await sb.rpc("approve_upgrade_request",{p_request_id:id});
+  if(error){
+    btn.disabled=false;
+    btn.textContent="Duyệt";
+    showNotice("Duyệt thất bại: "+error.message);
+    return;
+  }
+  showNotice("Đã duyệt đơn #"+id+" và cộng thời hạn gói.","ok");
+  await loadOrders();
+}
+
+async function reject(id,btn){
+  if(!confirm("Từ chối đơn #"+id+"?")) return;
+  clearNotice();
+  btn.disabled=true;
+  btn.textContent="Đang từ chối...";
+  const {error}=await sb.rpc("reject_upgrade_request",{p_request_id:id});
+  if(error){
+    btn.disabled=false;
+    btn.textContent="Từ chối";
+    showNotice("Từ chối thất bại: "+error.message);
+    return;
+  }
+  showNotice("Đã từ chối đơn #"+id+".","ok");
+  await loadOrders();
+}
+
+async function loadOrders(){
+  ordersEl.innerHTML="Đang tải...";
+  clearNotice();
+
+  const {data,error}=await sb.rpc("admin_list_upgrade_requests");
+  if(error){
+    ordersEl.innerHTML="";
+    showNotice("Không đọc được đơn: "+error.message);
+    return;
+  }
+
+  const rows=(data||[]).filter(x=>x.status==="pending");
+  pendingCount.textContent=String(rows.length);
+  proCount.textContent=String(rows.filter(x=>String(x.plan_code).toLowerCase()==="pro").length);
+  basicCount.textContent=String(rows.filter(x=>String(x.plan_code).toLowerCase()==="basic").length);
+
+  if(!rows.length){
+    ordersEl.innerHTML='<div class="empty">Hiện không có đơn pending.</div>';
+    return;
+  }
+
+  ordersEl.innerHTML="";
+  for(const o of rows){
+    const div=document.createElement("div");
+    div.className="order";
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <h2 style="margin:0">Đơn #${o.id}</h2>
+        <span class="status">${o.status}</span>
+      </div>
+
+      <div class="grid" style="margin-top:12px">
+        <div><div class="label">Email khách</div><div class="value">${o.email||"-"}</div></div>
+        <div><div class="label">Gói</div><div class="value">${String(o.plan_code||"").toUpperCase()}</div></div>
+
+        <div><div class="label">Số tiền</div><div class="value">${fmt(o.amount)}đ</div></div>
+        <div><div class="label">Thời hạn</div><div class="value">${o.duration_months||1} tháng</div></div>
+
+        <div><div class="label">Ngày tạo đơn</div><div class="value">${fmtDate(o.created_at)}</div></div>
+        <div><div class="label">Hạn hiện tại</div><div class="value">${fmtDate(o.current_expires_at)}</div></div>
+
+        <div style="grid-column:1/-1"><div class="label">Nội dung chuyển khoản</div><div class="value">${o.transfer_note||"-"}</div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn green approveBtn">Duyệt</button>
+        <button class="btn red rejectBtn">Từ chối</button>
+      </div>
+    `;
+
+    div.querySelector(".approveBtn").onclick=(e)=>approve(o.id,e.currentTarget);
+    div.querySelector(".rejectBtn").onclick=(e)=>reject(o.id,e.currentTarget);
+    ordersEl.appendChild(div);
+  }
+}
+
+(async()=>{
+  const {data:{session},error}=await sb.auth.getSession();
+  if(error){showNotice(error.message);return}
+  if(!session?.user){location.href="./login.html";return}
+
+  adminEmail.textContent=session.user.email||"";
+  const ok=await isAdmin(session.user);
+  if(!ok){
+    ordersEl.innerHTML='<div class="empty">Tài khoản này chưa có quyền Admin.</div>';
+    showNotice("Chưa có quyền Admin.");
+    return;
+  }
+
+  await loadOrders();
+})();
+</script>
+</body>
+</html>
