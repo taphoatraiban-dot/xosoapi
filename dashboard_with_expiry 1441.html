@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOSOAPI Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--panel:#0e1a2b;--text:#f4f7fb;--muted:#8fa0b7;--line:#233853;--green:#13d48e;--violet:#7c3aed}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.top{height:78px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#08121f}
+.brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:22px}.logo{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#14d89a,#14a9dc);font-size:26px}
+.wrap{max-width:900px;margin:auto;padding:18px}.hero,.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}
+h1,h2{margin:0 0 10px}.muted{color:var(--muted)}.status{display:inline-block;margin-top:12px;padding:8px 12px;border-radius:999px;background:#0b3424;color:#83f2bd;border:1px solid #176b49;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.box{background:#0a1524;border:1px solid var(--line);border-radius:16px;padding:16px}.label{color:var(--muted);font-size:13px;margin-bottom:6px}.value{font-size:26px;font-weight:900}
+.keybox{background:#081423;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+.btn,a.btn{display:inline-block;border:1px solid var(--line);background:#17263a;color:#fff;padding:11px 14px;border-radius:11px;font-weight:800;text-decoration:none;cursor:pointer}.btn.green{background:#0f9f71}.btn.violet{background:var(--violet)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.notice{display:none;margin-top:12px;padding:12px;border-radius:12px}.notice.ok{display:block;background:#0b3424;border:1px solid #176b49;color:#83f2bd}.notice.err{display:block;background:#3b1515;border:1px solid #7f1d1d;color:#fecaca}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.wrap{padding:14px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="logo">✦</div>XOSOAPI</div><div>☰</div></header>
+<main class="wrap">
+<section class="hero">
+<h1>Xin chào, <span id="userName">bạn</span></h1>
+<div class="muted" id="userEmail">Đang tải...</div>
+<div class="status">● Đã đăng nhập</div>
+
+<div class="grid">
+  <div class="box">
+    <div class="label">Tổng requests</div>
+    <div class="value" id="totalRequests">0</div>
+    <div class="muted">Tổng số lần gọi API.</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Requests hôm nay</div>
+    <div class="value" id="todayRequests">0</div>
+    <div class="muted">Số request trong ngày.</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Giới hạn hôm nay</div>
+    <div class="value" id="dailyLimit">0</div>
+    <div class="muted">Quota theo gói hiện tại.</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Còn lại hôm nay</div>
+    <div class="value" id="remainingRequests">0</div>
+    <div class="muted">Số request còn có thể sử dụng.</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Active Keys</div>
+    <div class="value" id="activeKeyCount">0</div>
+    <div class="muted">API key đang hoạt động.</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Gói hiện tại</div>
+    <div class="value" id="planName">Đang tải...</div>
+    <div class="muted" id="planLimit">Đang tải...</div>
+  </div>
+  <div class="box">
+    <div class="label">Hạn sử dụng</div>
+    <div class="value" id="expiresDate">Đang tải...</div>
+    <div class="muted" id="expiresRemaining">Đang tải...</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Khu vực</div>
+    <div class="value">MN / MT / MB</div>
+    <div class="muted">Tra kết quả theo ngày.</div>
+  </div>
+</div>
+
+<div id="notice" class="notice"></div>
+</section>
+
+<section class="card">
+<h2>API key của tài khoản</h2>
+<div class="keybox">
+<div class="key" id="apiKeyText">Đang kiểm tra...</div>
+<div class="actions">
+<button class="btn" id="copyKeyBtn" style="display:none">Copy key</button>
+<button class="btn green" id="createKeyBtn" style="display:none">Tạo API key</button>
+<a class="btn violet" href="./test.html">Test API</a>
+<a class="btn green" href="./pricing.html">Nâng cấp gói</a>
+</div>
+</div>
+<div class="muted" style="margin-top:10px">Mỗi tài khoản chỉ đọc được key của chính mình nhờ RLS.</div>
+</section>
+
+<section class="card">
+<h2>Tài khoản</h2>
+<div class="grid" style="margin-top:0">
+<div><div class="label">Email</div><div id="accountEmail">-</div></div>
+<div><div class="label">User ID</div><div id="accountUid" style="word-break:break-all">-</div></div>
+<div><div class="label">Telegram hỗ trợ</div><div>@MRkbiss</div></div>
+</div>
+<div class="actions">
+<a class="btn" href="https://t.me/MRkbiss" target="_blank" rel="noopener">Mở Telegram</a>
+<a class="btn" href="./">Tài liệu API</a>
+<button class="btn" id="logoutBtn">Đăng xuất</button>
+</div>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL="https://zigpqddlhvjbjrwhfhaa.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni";
+
+const configured=SUPABASE_ANON_KEY!=="PASTE_SUPABASE_ANON_KEY_HERE";
+const sb=configured?supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+
+const notice=document.getElementById("notice");
+const apiKeyText=document.getElementById("apiKeyText");
+const createKeyBtn=document.getElementById("createKeyBtn");
+const copyKeyBtn=document.getElementById("copyKeyBtn");
+const activeKeyCount=document.getElementById("activeKeyCount");
+const totalRequests=document.getElementById("totalRequests");
+const todayRequests=document.getElementById("todayRequests");
+const dailyLimit=document.getElementById("dailyLimit");
+const remainingRequests=document.getElementById("remainingRequests");
+const planName=document.getElementById("planName");
+const planLimit=document.getElementById("planLimit");
+const expiresDate=document.getElementById("expiresDate");
+const expiresRemaining=document.getElementById("expiresRemaining");
+
+function showNotice(text,kind="err"){notice.className="notice "+kind;notice.textContent=text}
+function makeApiKey(){return "xoso_"+crypto.randomUUID().replaceAll("-","")}
+
+let currentTodayUsage=0;
+let currentDailyLimit=0;
+
+function renderQuota(){
+  dailyLimit.textContent=Number(currentDailyLimit||0).toLocaleString("vi-VN");
+  const remain=Math.max(0,Number(currentDailyLimit||0)-Number(currentTodayUsage||0));
+  remainingRequests.textContent=remain.toLocaleString("vi-VN");
+}
+
+async function loadUsage(user){
+  const {data,error}=await sb.from("api_usage_daily")
+    .select("usage_date,request_count")
+    .eq("user_id",user.id);
+
+  if(error){
+    totalRequests.textContent="0";
+    todayRequests.textContent="0";
+    console.error("Lỗi đọc api_usage_daily:",error);
+    return;
+  }
+
+  const rows=data||[];
+  const total=rows.reduce((sum,row)=>sum+Number(row.request_count||0),0);
+
+  const now=new Date();
+  const localDate=[
+    now.getFullYear(),
+    String(now.getMonth()+1).padStart(2,"0"),
+    String(now.getDate()).padStart(2,"0")
+  ].join("-");
+
+  const today=rows
+    .filter(row=>String(row.usage_date||"").slice(0,10)===localDate)
+    .reduce((sum,row)=>sum+Number(row.request_count||0),0);
+
+  currentTodayUsage=today;
+  totalRequests.textContent=Number(total).toLocaleString("vi-VN");
+  todayRequests.textContent=Number(today).toLocaleString("vi-VN");
+  renderQuota();
+}
+
+async function loadUserPlan(user){
+  const {data,error}=await sb.from("user_api_keys")
+    .select("plan_code,created_at,expires_at")
+    .eq("user_id",user.id)
+    .eq("is_active",true)
+    .order("created_at",{ascending:true})
+    .limit(1);
+
+  if(error){
+    planName.textContent="Không đọc được";
+    planLimit.textContent="Không đọc được gói";
+    console.error("Lỗi đọc plan_code:",error);
+    return;
+  }
+
+  const code=String(data?.[0]?.plan_code||"basic").toLowerCase();
+
+  const expiresAt=data?.[0]?.expires_at||null;
+  if(expiresAt){
+    const expiry=new Date(expiresAt);
+    expiresDate.textContent=new Intl.DateTimeFormat("vi-VN",{
+      timeZone:"Asia/Ho_Chi_Minh",
+      day:"2-digit",month:"2-digit",year:"numeric"
+    }).format(expiry);
+    const diffMs=expiry.getTime()-Date.now();
+    if(diffMs<=0){
+      expiresRemaining.textContent="Đã hết hạn";
+    }else{
+      const days=Math.ceil(diffMs/(1000*60*60*24));
+      expiresRemaining.textContent="Còn "+days+" ngày";
+    }
+  }else{
+    expiresDate.textContent="Không giới hạn";
+    expiresRemaining.textContent="Chưa đặt ngày hết hạn";
+  }
+
+  let plan=null;
+  const planQuery=await sb.from("api_plans")
+    .select("code,name,requests_per_minute,requests_per_day")
+    .eq("code",code)
+    .maybeSingle();
+
+  if(!planQuery.error && planQuery.data){
+    plan=planQuery.data;
+  }
+
+  const fallback={
+    basic:{name:"Cơ Bản",requests_per_minute:60,requests_per_day:2000},
+    advanced:{name:"Nâng Cao",requests_per_minute:120,requests_per_day:5000},
+    pro:{name:"Pro",requests_per_minute:300,requests_per_day:10000}
+  };
+
+  const p=plan||fallback[code]||fallback.basic;
+  currentDailyLimit=Number(p.requests_per_day||0);
+  planName.textContent=code==="pro"?"Pro":(code==="advanced"?"Nâng Cao":"Cơ Bản");
+  planLimit.textContent=
+    Number(p.requests_per_day||0).toLocaleString("vi-VN")+" request/ngày • "+
+    Number(p.requests_per_minute||0).toLocaleString("vi-VN")+" request/phút.";
+  renderQuota();
+}
+
+async function loadUserApiKey(user){
+  const {data,error}=await sb.from("user_api_keys")
+    .select("id,api_key,is_active,created_at")
+    .eq("user_id",user.id).eq("is_active",true)
+    .order("created_at",{ascending:true});
+
+  if(error){
+    apiKeyText.textContent="Không đọc được API key";
+    showNotice("Lỗi đọc user_api_keys: "+error.message);
+    return;
+  }
+
+  activeKeyCount.textContent=String(data?.length||0);
+
+  if(data&&data.length){
+    apiKeyText.textContent=data[0].api_key;
+    copyKeyBtn.style.display="inline-block";
+    createKeyBtn.style.display="none";
+  }else{
+    apiKeyText.textContent="Tài khoản chưa có API key.";
+    createKeyBtn.style.display="inline-block";
+    copyKeyBtn.style.display="none";
+  }
+}
+
+async function createUserApiKey(user){
+  createKeyBtn.disabled=true;
+  apiKeyText.textContent="Đang tạo key...";
+
+  const newKey=makeApiKey();
+
+  const {data,error}=await sb.from("user_api_keys")
+    .insert({user_id:user.id,api_key:newKey,is_active:true})
+    .select("api_key").single();
+
+  createKeyBtn.disabled=false;
+
+  if(error){
+    apiKeyText.textContent="Tạo key thất bại";
+    showNotice("Lỗi tạo API key: "+error.message);
+    return;
+  }
+
+  apiKeyText.textContent=data.api_key;
+  activeKeyCount.textContent="1";
+  createKeyBtn.style.display="none";
+  copyKeyBtn.style.display="inline-block";
+  showNotice("Đã tạo API key riêng cho tài khoản.","ok");
+}
+
+copyKeyBtn.onclick=async()=>{
+  await navigator.clipboard.writeText(apiKeyText.textContent.trim());
+  showNotice("Đã copy API key.","ok");
+};
+
+document.getElementById("logoutBtn").onclick=async()=>{
+  if(sb)await sb.auth.signOut();
+  location.href="./login.html";
+};
+
+(async()=>{
+  if(!configured){
+    showNotice("Dashboard chưa được cấu hình Publishable/Anon Key.");
+    return;
+  }
+
+  const {data:{session},error}=await sb.auth.getSession();
+
+  if(error){
+    showNotice(error.message);
+    return;
+  }
+
+  if(!session?.user){
+    location.href="./login.html";
+    return;
+  }
+
+  const user=session.user;
+  const name=user.user_metadata?.full_name||user.email?.split("@")[0]||"bạn";
+
+  document.getElementById("userName").textContent=name;
+  document.getElementById("userEmail").textContent=user.email||"";
+  document.getElementById("accountEmail").textContent=user.email||"-";
+  document.getElementById("accountUid").textContent=user.id||"-";
+
+  createKeyBtn.onclick=()=>createUserApiKey(user);
+
+  await Promise.all([
+    loadUsage(user),
+    loadUserPlan(user),
+    loadUserApiKey(user)
+  ]);
+})();
+</script>
+</body>
+</html>
