@@ -220,7 +220,7 @@ async function loadUserPlan(user){
   }
 
   const fallback={
-    basic:{name:"Cơ Bản",requests_per_minute:60,requests_per_day:2000},
+    trial:{name:"Dùng thử",requests_per_minute:30,requests_per_day:500},    basic:{name:"Cơ Bản",requests_per_minute:60,requests_per_day:2000},
     advanced:{name:"Nâng Cao",requests_per_minute:120,requests_per_day:5000},
     pro:{name:"Pro",requests_per_minute:300,requests_per_day:10000}
   };
@@ -228,8 +228,7 @@ async function loadUserPlan(user){
   const p=plan||fallback[code]||fallback.basic;
   currentDailyLimit=Number(p.requests_per_day||0);
   planName.textContent=code==="pro"?"Pro":(code==="advanced"?"Nâng Cao":"Cơ Bản");
-  planLimit.textContent=
-    Number(p.requests_per_day||0).toLocaleString("vi-VN")+" request/ngày • "+
+planName.textContent=code==="trial"?"Dùng thử":(code==="pro"?"Pro":(code==="advanced"?"Nâng Cao":"Cơ Bản"));    Number(p.requests_per_day||0).toLocaleString("vi-VN")+" request/ngày • "+
     Number(p.requests_per_minute||0).toLocaleString("vi-VN")+" request/phút.";
   renderQuota();
 }
