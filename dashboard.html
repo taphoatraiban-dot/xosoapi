@@ -123,6 +123,8 @@ h1,h2,h3{margin:0}.hello{font-size:22px;font-weight:950}.muted{color:var(--muted
       <button class="adminTab active" data-tab="pending">Đơn chờ</button>
       <button class="adminTab" data-tab="accounts">Khách hàng</button>
       <button class="adminTab" data-tab="orders">Tất cả đơn</button>
+      
+<button class="adminTab" data-tab="keylogs">🔐 Lịch sử API Key</button>
     </div>
     <div class="adminPanel active" id="admPanelPending"><div id="admPendingList"></div></div>
     <div class="adminPanel" id="admPanelAccounts">
@@ -132,6 +134,15 @@ h1,h2,h3{margin:0}.hello{font-size:22px;font-weight:950}.muted{color:var(--muted
     <div class="adminPanel" id="admPanelOrders">
       <input class="adminSearch" id="admOrderSearch" placeholder="🔎 Tìm email, gói, trạng thái, mã đơn...">
       <div id="admOrderList"></div>
+      </div>
+    <div class="adminPanel" id="admPanelKeylogs">
+  <div class="muted" style="margin-bottom:12px">
+    200 thao tác khóa/mở khóa API Key gần nhất
+  </div>
+  <div id="admKeyLogsList">
+    Chưa tải lịch sử.
+  </div>
+</div>
     </div>
   </section>
 
@@ -504,6 +515,47 @@ async function rejectOrder(id,b){
   showNotice("Đã từ chối đơn #"+id+".","ok"); await loadAdmin();
 }
 
+async function loadApiKeyLogs() {
+  const box = document.getElementById("admKeyLogsList");
+  if (!box) return;
+
+  box.textContent = "Đang tải lịch sử...";
+
+  const { data, error } = await sb.rpc("admin_list_api_key_logs");
+
+  if (error) {
+    box.textContent = "Lỗi tải lịch sử: " + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    box.textContent = "Chưa có lịch sử khóa/mở khóa API Key.";
+    return;
+  }
+
+  box.innerHTML = data.map(x => `
+    <div class="adminRow">
+      <div class="adminHead">
+        <strong>${x.action === "LOCK" ? "🔒 Khóa Key" : "🔓 Mở khóa Key"}</strong>
+        <span>${ad(x.changed_at)}</span>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="label">API Key ID</div>
+          <div class="adminKey">${ae(x.api_key_id)}</div>
+        </div>
+        <div>
+          <div class="label">Người thực hiện</div>
+          <div class="adminKey">${ae(x.changed_by || "Hệ thống")}</div>
+        </div>
+        <div>
+          <div class="label">Trạng thái</div>
+          <div>${x.old_is_active ? "ACTIVE" : "TẮT"} → ${x.new_is_active ? "ACTIVE" : "TẮT"}</div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
 async function loadAdmin(){
   const [a,o]=await Promise.all([
     sb.rpc("admin_list_accounts"),
@@ -512,8 +564,9 @@ async function loadAdmin(){
   if(a.error){showNotice("Lỗi đọc khách hàng: "+a.error.message);return}
   if(o.error){showNotice("Lỗi đọc đơn hàng: "+o.error.message);return}
   ADMIN_ACCOUNTS=a.data||[]; ADMIN_ORDERS=o.data||[];
-  renderAccounts(); renderOrders();
-}
+renderAccounts();
+renderOrders();
+await loadApiKeyLogs();}
 
 document.querySelectorAll(".adminTab").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".adminTab").forEach(x=>x.classList.remove("active"));
