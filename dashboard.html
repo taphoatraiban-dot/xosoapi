@@ -442,9 +442,53 @@ function renderAccounts(){
         <div style="grid-column:1/-1"><div class="label">User ID</div><div class="adminKey">${ae(x.user_id)}</div></div>
         <div style="grid-column:1/-1"><div class="label">API key</div><div class="adminKey">${ae(x.api_key)}</div></div>
       </div>
-    </div>`).join(""):'<div class="muted" style="padding:16px">Chưa có tài khoản.</div>';
-}
+      <div class="actions">
+  <button
+    type="button"
+    class="btn admToggleKey"
+    data-id="${ae(x.api_key_id)}"
+    data-active="${x.is_active ? 'true' : 'false'}"
+    ${!x.api_key_id ? 'disabled' : ''}>
+    ${x.is_active ? '🔒 Khóa Key' : '🔓 Mở khóa Key'}
+  </button>
+</div>    </div>`).join(""):'<div class="muted" style="padding:16px">Chưa có tài khoản.</div>';
+  
 
+  document.getElementById("admAccountList").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".admToggleKey");
+  if (!btn || btn.disabled) return;
+
+  const id = btn.dataset.id;
+  const isActive = btn.dataset.active === "true";
+
+  if (!id || id === "-") {
+    showNotice("Không tìm thấy ID API Key.");
+    return;
+  }
+
+  const action = isActive ? "KHÓA" : "MỞ KHÓA";
+
+  if (!confirm(`Bạn có chắc muốn ${action} API Key này?`)) return;
+
+  btn.disabled = true;
+
+  try {
+    const { data, error } = await sb.rpc("admin_set_api_key_active", {
+      p_key_id: id,
+      p_is_active: !isActive
+    });
+
+    if (error) throw error;
+    if (data !== true) throw new Error("Không tìm thấy API Key");
+
+    showNotice(`Đã ${action} API Key thành công.`, "ok");
+    await loadAdmin();
+
+  } catch (err) {
+    showNotice("Thao tác thất bại: " + err.message);
+    btn.disabled = false;
+  }
+});
 async function approveOrder(id,b){
   if(!confirm("Duyệt đơn #"+id+"?"))return;
   b.disabled=true;
