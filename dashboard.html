@@ -453,7 +453,7 @@ function renderAccounts(){
   </button>
 </div>    </div>`).join(""):'<div class="muted" style="padding:16px">Chưa có tài khoản.</div>';
   
-
+}
   document.getElementById("admAccountList").addEventListener("click", async (e) => {
   const btn = e.target.closest(".admToggleKey");
   if (!btn || btn.disabled) return;
