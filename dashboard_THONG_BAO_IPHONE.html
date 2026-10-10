@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>XOSOAPI Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#06101d;--panel:#0b1828;--panel2:#0d1d30;--line:#1f3a59;
+  --text:#f5f8ff;--muted:#8fa4bd;--green:#12d693;--blue:#1689ff;
+  --violet:#7c3aed;--red:#ef476f;--amber:#ffb020;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:
+radial-gradient(circle at 90% 0%,rgba(22,137,255,.10),transparent 30%),
+radial-gradient(circle at 0% 45%,rgba(124,58,237,.08),transparent 25%),
+var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.top{position:sticky;top:0;z-index:20;height:72px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(80,120,160,.35);background:rgba(6,16,29,.92);backdrop-filter:blur(16px)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:950;font-size:21px}.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#11d9a0,#15a8e9);font-size:25px;box-shadow:0 8px 28px rgba(17,217,160,.18)}
+.online{font-size:12px;color:#57f3b9;font-weight:800;margin-left:4px}.menu{font-size:22px}
+.wrap{max-width:1050px;margin:auto;padding:16px}
+.card{background:linear-gradient(180deg,rgba(14,30,49,.96),rgba(9,23,39,.96));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 12px 35px rgba(0,0,0,.12)}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.userline{display:flex;gap:12px;align-items:center}.avatar{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#12d693,#16a9e9);font-size:22px;font-weight:900}
+h1,h2,h3{margin:0}.hello{font-size:22px;font-weight:950}.muted{color:var(--muted)}.email{font-size:14px;margin-top:4px}.status{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:12px;color:#7ff2bf;font-weight:800}
+.planpill{padding:7px 11px;border-radius:999px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);font-weight:900;font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.metric{min-width:0;background:#0a1828;border:1px solid var(--line);border-radius:17px;padding:14px}
+.metric .icon{font-size:20px;margin-bottom:8px}.label{color:var(--muted);font-size:12px}.value{font-size:25px;font-weight:950;margin-top:4px;white-space:nowrap}.sub{font-size:12px;color:var(--muted);margin-top:5px}
+.metric.green{border-color:#0a805d}.metric.blue{border-color:#155c9b}.metric.violet{border-color:#5932a7}
+.apirow{display:flex;align-items:center;justify-content:space-between;gap:12px}.keywrap{min-width:0;flex:1}.key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d7e4f5;margin-top:7px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn,a.btn{border:1px solid var(--line);background:#14263b;color:#fff;padding:10px 13px;border-radius:11px;font-weight:850;text-decoration:none;cursor:pointer}.btn.green{background:linear-gradient(135deg,#0f9f71,#0bc28b)}.btn.violet{background:linear-gradient(135deg,#6d28d9,#8b5cf6)}.btn.red{background:#a51f3d}
+.quick{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:13px;background:#091727;margin-top:12px}
+.notice{display:none;margin:0 0 12px;padding:12px;border-radius:12px}.notice.ok{display:block;background:#0b3424;border:1px solid #176b49;color:#83f2bd}.notice.err{display:block;background:#3b1515;border:1px solid #7f1d1d;color:#fecaca}
+.adminOnly{display:none}.adminShell{border-color:#5b32a5;box-shadow:0 0 0 1px rgba(124,58,237,.08),0 18px 45px rgba(65,30,130,.12)}
+.adminHead{display:flex;justify-content:space-between;align-items:center;gap:10px}.adminTitle{display:flex;align-items:center;gap:10px}.shield{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#2936e8,#7c3aed);font-size:22px}
+.adminStats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.adminStats .metric .value{font-size:22px}
+.adminTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:14px 0 10px;background:#071524;padding:5px;border-radius:14px;border:1px solid var(--line)}
+.adminTab{border:0;background:transparent;color:#c7d4e6;padding:10px 8px;border-radius:10px;font-weight:850;cursor:pointer}.adminTab.active{background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff}
+.adminPanel{display:none}.adminPanel.active{display:block}.adminSearch{width:100%;background:#071524;color:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:7px 0}
+.adminRow{background:#081727;border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:9px}.adminBadge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;background:#3a2d09;color:#ffd977}.adminBadge.approved,.adminBadge.active{background:#0b3424;color:#83f2bd}.adminBadge.rejected,.adminBadge.inactive{background:#3b1515;color:#fecaca}.adminKey{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;font-size:11px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.accountGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.accountActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hiddenMeta{display:none}
+@media(max-width:700px){
+  .wrap{padding:12px}.top{height:66px}.online{display:none}
+  .hero{align-items:flex-start}.hello{font-size:19px}.avatar{width:44px;height:44px}
+  .metrics{grid-template-columns:repeat(2,1fr)}.metric{padding:12px}.value{font-size:23px}
+  .adminStats{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:repeat(2,1fr)}.accountGrid{grid-template-columns:1fr}
+  .apirow{align-items:flex-start}.card{border-radius:17px;padding:14px}
+}
+
+/* Thông báo sau đăng nhập - tối ưu iPhone */
+.welcomeOverlay{position:fixed;inset:0;z-index:9999;background:rgba(2,8,20,.79);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(7px)}
+.welcomeOverlay.visible{display:flex}
+.welcomeDialog{width:min(100%,440px);max-height:calc(100dvh - 36px);overflow-y:auto;background:linear-gradient(160deg,#132c46,#081727);border:1px solid #315778;border-radius:22px;padding:23px 20px;color:#f5f8ff;box-shadow:0 25px 90px #0009}
+.welcomeMark{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#11d9a0,#15a8e9);font-size:30px;margin-bottom:13px}
+.welcomeDialog h2{font-size:23px;margin-bottom:9px}.welcomeDialog p{color:#c0d0e3;line-height:1.6;font-size:14px}.welcomeInfo{background:#0b2136;border:1px solid #294966;padding:13px;border-radius:13px;margin:13px 0;font-size:14px;line-height:1.65}.welcomeInfo strong{color:#6ff1c2}
+.welcomeAccept{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#dce9f8;margin:15px 0}.welcomeAccept input{width:19px;height:19px;flex-shrink:0;accent-color:#12c98f}
+.welcomeContinue{width:100%;border:0;border-radius:13px;padding:15px;background:#12c98f;color:#06201b;font-weight:900;font-size:16px;cursor:pointer}.welcomeContinue:disabled{opacity:.45;cursor:not-allowed}
+.welcomeOpen{border:1px solid #315778;border-radius:10px;background:#122a43;color:white;padding:8px 11px;font-weight:700;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">✦</div>XOSOAPI <span class="online">● Online</span></div>
+  <button type="button" class="welcomeOpen" id="openWelcomeBtn">🔔 Thông báo</button>
+</header>
+
+<main class="wrap">
+  <section class="card hero">
+    <div class="userline">
+      <div class="avatar">T</div>
+      <div>
+        <div class="hello">Xin chào, <span id="userName">bạn</span></div>
+        <div class="email muted" id="userEmail">Đang tải...</div>
+        <div class="status">● Đã đăng nhập</div>
+      </div>
+    </div>
+    <div class="planpill" id="planName">...</div>
+  </section>
+
+  <div id="notice" class="notice"></div>
+
+  <section class="metrics">
+    <div class="metric green"><div class="icon">👑</div><div class="label">Gói hiện tại</div><div class="value" id="planNameMirror">Pro</div><div class="sub" id="expiresRemaining">Đang tải...</div></div>
+    <div class="metric blue"><div class="icon">▥</div><div class="label">Hôm nay</div><div class="value"><span id="todayRequests">0</span></div><div class="sub">/ <span id="dailyLimit">0</span> requests</div></div>
+    <div class="metric blue"><div class="icon">◔</div><div class="label">Còn lại</div><div class="value" id="remainingRequests">0</div><div class="sub">lần gọi hôm nay</div></div>
+    <div class="metric green"><div class="icon">🔑</div><div class="label">API Key</div><div class="value" id="activeKeyCount">0</div><div class="sub">đang hoạt động</div></div>
+  </section>
+
+  <section class="card">
+    <div class="apirow">
+      <div class="keywrap"><h3>🔗 API key của bạn</h3><div class="key" id="apiKeyText">Đang kiểm tra...</div></div>
+      <button class="btn" id="copyKeyBtn" style="display:none">Copy</button>
+    </div>
+    <div class="actions">
+      <button class="btn green" id="createKeyBtn" style="display:none">Tạo API key</button>
+      <a class="btn violet" href="./test.html">Test API</a>
+      <a class="btn green" href="./pricing.html">Nâng cấp gói</a>
+      <a class="btn" href="./">Tài liệu API</a>
+    </div>
+    <div class="quick"><span class="muted">Hạn sử dụng</span><strong id="expiresDate">Đang tải...</strong></div>
+  </section>
+
+  <section class="card adminOnly adminShell" id="adminArea">
+    <div class="adminHead">
+      <div class="adminTitle"><div class="shield">🛡</div><div><h2>Quản trị hệ thống</h2><div class="muted">Admin</div></div></div>
+      <button class="btn" id="adminRefreshBtn">↻</button>
+    </div>
+    <div class="adminStats">
+      <div class="metric"><div class="label">Khách hàng</div><div class="value" id="admAccounts">0</div><div class="sub">tổng tài khoản</div></div>
+      <div class="metric"><div class="label">Đơn chờ</div><div class="value" id="admPending">0</div><div class="sub">cần xử lý</div></div>
+      <div class="metric"><div class="label">Đã duyệt</div><div class="value" id="admApproved">0</div><div class="sub">tổng cộng</div></div>
+      <div class="metric"><div class="label">Giá trị đơn</div><div class="value" id="admRevenue">0đ</div><div class="sub">toàn bộ đơn</div></div>
+    </div>
+    <div class="hiddenMeta">
+      <span id="admTrial">0</span><span id="admBasic">0</span><span id="admPaid">0</span><span id="admOrders">0</span>
+    </div>
+    <div class="adminTabs">
+      <button class="adminTab active" data-tab="pending">Đơn chờ</button>
+      <button class="adminTab" data-tab="accounts">Khách hàng</button>
+      <button class="adminTab" data-tab="orders">Tất cả đơn</button>
+    </div>
+    <div class="adminPanel active" id="admPanelPending"><div id="admPendingList"></div></div>
+    <div class="adminPanel" id="admPanelAccounts">
+      <input class="adminSearch" id="admAccountSearch" placeholder="🔎 Tìm email, User ID, API key, gói...">
+      <div id="admAccountList"></div>
+    </div>
+    <div class="adminPanel" id="admPanelOrders">
+      <input class="adminSearch" id="admOrderSearch" placeholder="🔎 Tìm email, gói, trạng thái, mã đơn...">
+      <div id="admOrderList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>⚙️ Tài khoản</h3>
+    <div class="accountGrid" style="margin-top:12px">
+      <div><div class="label">Email</div><div id="accountEmail">-</div></div>
+      <div><div class="label">User ID</div><div id="accountUid" class="adminKey">-</div></div>
+      <div><div class="label">Telegram hỗ trợ</div><div>@MRkbiss</div></div>
+      <div><div class="label">Tổng requests</div><div id="totalRequests">0</div></div>
+    </div>
+    <div class="accountActions">
+      <a class="btn" href="https://t.me/MRkbiss" target="_blank" rel="noopener">Mở Telegram</a>
+      <button class="btn red" id="logoutBtn">Đăng xuất</button>
+    </div>
+    <div id="planLimit" class="muted" style="margin-top:10px"></div>
+  </section>
+</main>
+
+
+<div class="welcomeOverlay" id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" aria-hidden="true">
+  <div class="welcomeDialog">
+    <div class="welcomeMark">✦</div>
+    <h2 id="welcomeTitle">Chào mừng đến XOSOAPI!</h2>
+    <p>Xin chào <strong id="welcomeUser">thành viên</strong>. Cảm ơn bạn đã sử dụng hệ thống.</p>
+    <div class="welcomeInfo">
+      <strong>🔔 Thông báo hệ thống</strong><br>
+      • Bạn có thể xem gói dịch vụ, hạn sử dụng và số lượt API tại Dashboard.<br>
+      • Nút 🔴 LIVE XỔ SỐ mở trang LIVE v3 hiện là bản demo; không sử dụng dữ liệu demo để xác nhận trúng thưởng.<br>
+      • Không chia sẻ API Key của bạn cho người khác.
+    </div>
+    <div class="welcomeInfo"><strong>📜 Điều khoản sử dụng</strong><br>
+      Kết quả chỉ có giá trị tham khảo cho đến khi đối chiếu với nguồn công bố chính thức. Người dùng chịu trách nhiệm bảo vệ tài khoản và sử dụng API đúng mục đích, đúng quy định pháp luật.
+    </div>
+    <label class="welcomeAccept"><input id="welcomeAgree" type="checkbox"><span>Tôi đã đọc và hiểu thông báo, điều khoản trên.</span></label>
+    <button type="button" class="welcomeContinue" id="welcomeContinue" disabled>Đã hiểu – Tiếp tục</button>
+  </div>
+</div>
+
+<script>
+
+
+// Hiện thông báo một lần trong phiên đăng nhập của mỗi tài khoản.
+const welcomeOverlay=document.getElementById("welcomeOverlay");
+const welcomeAgree=document.getElementById("welcomeAgree");
+const welcomeContinue=document.getElementById("welcomeContinue");
+let welcomeStorageKey="";
+function showWelcome(user,force=false){
+  welcomeStorageKey="xosoapi_welcome_v1_"+user.id;
+  if(!force && sessionStorage.getItem(welcomeStorageKey)==="seen")return;
+  document.getElementById("welcomeUser").textContent=user.user_metadata?.full_name||user.email?.split("@")[0]||"thành viên";
+  welcomeAgree.checked=false;welcomeContinue.disabled=true;
+  welcomeOverlay.classList.add("visible");welcomeOverlay.setAttribute("aria-hidden","false");
+  welcomeAgree.focus();
+}
+welcomeAgree.addEventListener("change",()=>welcomeContinue.disabled=!welcomeAgree.checked);
+welcomeContinue.addEventListener("click",()=>{
+  if(!welcomeAgree.checked)return;
+  if(welcomeStorageKey)sessionStorage.setItem(welcomeStorageKey,"seen");
+  welcomeOverlay.classList.remove("visible");welcomeOverlay.setAttribute("aria-hidden","true");
+});
+
+const SUPABASE_URL="https://zigpqddlhvjbjrwhfhaa.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni";
+
+const configured=SUPABASE_ANON_KEY!=="PASTE_SUPABASE_ANON_KEY_HERE";
+const sb=configured?supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+
+const notice=document.getElementById("notice");
+const apiKeyText=document.getElementById("apiKeyText");
+const createKeyBtn=document.getElementById("createKeyBtn");
+const copyKeyBtn=document.getElementById("copyKeyBtn");
+const activeKeyCount=document.getElementById("activeKeyCount");
+const totalRequests=document.getElementById("totalRequests");
+const todayRequests=document.getElementById("todayRequests");
+const dailyLimit=document.getElementById("dailyLimit");
+const remainingRequests=document.getElementById("remainingRequests");
+const planName=document.getElementById("planName");
+const planLimit=document.getElementById("planLimit");
+const expiresDate=document.getElementById("expiresDate");
+const expiresRemaining=document.getElementById("expiresRemaining");
+
+function showNotice(text,kind="err"){notice.className="notice "+kind;notice.textContent=text}
+function makeApiKey(){return "xoso_"+crypto.randomUUID().replaceAll("-","")}
+
+let currentTodayUsage=0;
+let currentDailyLimit=0;
+
+function renderQuota(){
+  dailyLimit.textContent=Number(currentDailyLimit||0).toLocaleString("vi-VN");
+  const remain=Math.max(0,Number(currentDailyLimit||0)-Number(currentTodayUsage||0));
+  remainingRequests.textContent=remain.toLocaleString("vi-VN");
+}
+
+async function loadUsage(user){
+  const {data,error}=await sb.from("api_usage_daily")
+    .select("usage_date,request_count")
+    .eq("user_id",user.id);
+
+  if(error){
+    totalRequests.textContent="0";
+    todayRequests.textContent="0";
+    console.error("Lỗi đọc api_usage_daily:",error);
+    return;
+  }
+
+  const rows=data||[];
+  const total=rows.reduce((sum,row)=>sum+Number(row.request_count||0),0);
+
+  const now=new Date();
+  const localDate=[
+    now.getFullYear(),
+    String(now.getMonth()+1).padStart(2,"0"),
+    String(now.getDate()).padStart(2,"0")
+  ].join("-");
+
+  const today=rows
+    .filter(row=>String(row.usage_date||"").slice(0,10)===localDate)
+    .reduce((sum,row)=>sum+Number(row.request_count||0),0);
+
+  currentTodayUsage=today;
+  totalRequests.textContent=Number(total).toLocaleString("vi-VN");
+  todayRequests.textContent=Number(today).toLocaleString("vi-VN");
+  renderQuota();
+}
+
+async function loadUserPlan(user){
+  const {data,error}=await sb.from("user_api_keys")
+    .select("plan_code,created_at,expires_at")
+    .eq("user_id",user.id)
+    .eq("is_active",true)
+    .order("created_at",{ascending:true})
+    .limit(1);
+
+  if(error){
+    planName.textContent="Không đọc được";
+    planLimit.textContent="Không đọc được gói";
+    console.error("Lỗi đọc plan_code:",error);
+    return;
+  }
+
+  const code=String(data?.[0]?.plan_code||"basic").toLowerCase();
+
+  const expiresAt=data?.[0]?.expires_at||null;
+  if(expiresAt){
+    const expiry=new Date(expiresAt);
+    expiresDate.textContent=new Intl.DateTimeFormat("vi-VN",{
+      timeZone:"Asia/Ho_Chi_Minh",
+      day:"2-digit",month:"2-digit",year:"numeric"
+    }).format(expiry);
+    const diffMs=expiry.getTime()-Date.now();
+    if(diffMs<=0){
+      expiresRemaining.textContent="Đã hết hạn";
+    }else{
+      const days=Math.ceil(diffMs/(1000*60*60*24));
+      expiresRemaining.textContent="Còn "+days+" ngày";
+    }
+  }else{
+    expiresDate.textContent="Không giới hạn";
+    expiresRemaining.textContent="Chưa đặt ngày hết hạn";
+  }
+
+  let plan=null;
+  const planQuery=await sb.from("api_plans")
+    .select("code,name,requests_per_minute,requests_per_day")
+    .eq("code",code)
+    .maybeSingle();
+
+  if(!planQuery.error && planQuery.data){
+    plan=planQuery.data;
+  }
+
+  const fallback={
+    trial:{name:"Dùng thử",requests_per_minute:30,requests_per_day:500},    basic:{name:"Cơ Bản",requests_per_minute:60,requests_per_day:2000},
+    advanced:{name:"Nâng Cao",requests_per_minute:120,requests_per_day:5000},
+    pro:{name:"Pro",requests_per_minute:300,requests_per_day:10000}
+  };
+
+  const p=plan||fallback[code]||fallback.basic;
+  currentDailyLimit=Number(p.requests_per_day||0);
+  planName.textContent=
+    code==="trial"?"Dùng thử":
+    code==="pro"?"Pro":
+    code==="advanced"?"Nâng Cao":"Cơ Bản";
+  planLimit.textContent=
+    Number(p.requests_per_day||0).toLocaleString("vi-VN")+" request/ngày • "+
+    Number(p.requests_per_minute||0).toLocaleString("vi-VN")+" request/phút.";
+  renderQuota();
+}
+
+async function loadUserApiKey(user){
+  const {data,error}=await sb.from("user_api_keys")
+    .select("id,api_key,is_active,created_at")
+    .eq("user_id",user.id).eq("is_active",true)
+    .order("created_at",{ascending:true});
+
+  if(error){
+    apiKeyText.textContent="Không đọc được API key";
+    showNotice("Lỗi đọc user_api_keys: "+error.message);
+    return;
+  }
+
+  activeKeyCount.textContent=String(data?.length||0);
+
+  if(data&&data.length){
+    apiKeyText.textContent=data[0].api_key;
+    copyKeyBtn.style.display="inline-block";
+    createKeyBtn.style.display="none";
+  }else{
+    apiKeyText.textContent="Tài khoản chưa có API key.";
+    createKeyBtn.style.display="inline-block";
+    copyKeyBtn.style.display="none";
+  }
+}
+
+async function createUserApiKey(user){
+  createKeyBtn.disabled=true;
+  apiKeyText.textContent="Đang tạo key...";
+
+  const newKey=makeApiKey();
+
+  const {data,error}=await sb.from("user_api_keys")
+    .insert({user_id:user.id,api_key:newKey,is_active:true})
+    .select("api_key").single();
+
+  createKeyBtn.disabled=false;
+
+  if(error){
+    apiKeyText.textContent="Tạo key thất bại";
+    showNotice("Lỗi tạo API key: "+error.message);
+    return;
+  }
+
+  apiKeyText.textContent=data.api_key;
+  activeKeyCount.textContent="1";
+  createKeyBtn.style.display="none";
+  copyKeyBtn.style.display="inline-block";
+  showNotice("Đã tạo API key riêng cho tài khoản.","ok");
+}
+
+copyKeyBtn.onclick=async()=>{
+  await navigator.clipboard.writeText(apiKeyText.textContent.trim());
+  showNotice("Đã copy API key.","ok");
+};
+
+document.getElementById("logoutBtn").onclick=async()=>{
+  if(welcomeStorageKey)sessionStorage.removeItem(welcomeStorageKey);
+  if(sb)await sb.auth.signOut();
+  location.href="./login.html";
+};
+
+
+let ADMIN_ORDERS=[], ADMIN_ACCOUNTS=[];
+
+function ae(v){return String(v??"-").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function an(v){return Number(v||0).toLocaleString("vi-VN")}
+function ad(v){if(!v)return "-";return new Intl.DateTimeFormat("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(v))}
+function ap(v){v=String(v||"").toLowerCase();return v==="trial"?"Dùng thử":v==="basic"?"Cơ Bản":v==="advanced"?"Nâng Cao":v==="pro"?"Pro":v||"-"}
+
+async function isAdmin(user){
+  const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
+  return !error && !!data;
+}
+
+function orderCard(o,actions=false){
+  const st=String(o.status||"pending").toLowerCase();
+  return `<div class="adminRow adminOrder" data-search="${ae([o.id,o.email,o.user_id,o.plan_code,o.status,o.transfer_note].join(" ").toLowerCase())}">
+    <div class="adminHead"><strong>Đơn #${ae(o.id)}</strong><span class="adminBadge ${ae(st)}">${ae(st)}</span></div>
+    <div class="grid">
+      <div><div class="label">Email</div><div>${ae(o.email)}</div></div>
+      <div><div class="label">Gói</div><div>${ae(ap(o.plan_code))}</div></div>
+      <div><div class="label">Số tiền</div><div>${an(o.amount)}đ</div></div>
+      <div><div class="label">Thời hạn</div><div>${ae(o.duration_months||1)} tháng</div></div>
+      <div><div class="label">Ngày tạo</div><div>${ad(o.created_at)}</div></div>
+      <div><div class="label">Ngày xử lý</div><div>${ad(o.reviewed_at)}</div></div>
+    </div>
+    ${o.transfer_note?`<div class="muted" style="margin-top:8px">Nội dung CK: ${ae(o.transfer_note)}</div>`:""}
+    ${actions?`<div class="actions"><button class="btn green admApprove" data-id="${ae(o.id)}">Duyệt</button><button class="btn admReject" data-id="${ae(o.id)}">Từ chối</button></div>`:""}
+  </div>`;
+}
+
+function renderOrders(){
+  const pending=ADMIN_ORDERS.filter(x=>String(x.status).toLowerCase()==="pending");
+  document.getElementById("admPending").textContent=an(pending.length);
+  document.getElementById("admApproved").textContent=an(ADMIN_ORDERS.filter(x=>String(x.status).toLowerCase()==="approved").length);
+  document.getElementById("admOrders").textContent=an(ADMIN_ORDERS.length);
+  document.getElementById("admRevenue").textContent=an(ADMIN_ORDERS.reduce((z,x)=>z+Number(x.amount||0),0))+"đ";
+  const p=document.getElementById("admPendingList");
+  p.innerHTML=pending.length?pending.map(x=>orderCard(x,true)).join(""):'<div class="muted" style="padding:16px">Không có đơn chờ.</div>';
+  document.getElementById("admOrderList").innerHTML=ADMIN_ORDERS.length?ADMIN_ORDERS.map(x=>orderCard(x,false)).join(""):'<div class="muted" style="padding:16px">Chưa có đơn.</div>';
+  p.querySelectorAll(".admApprove").forEach(b=>b.onclick=()=>approveOrder(b.dataset.id,b));
+  p.querySelectorAll(".admReject").forEach(b=>b.onclick=()=>rejectOrder(b.dataset.id,b));
+}
+
+function renderAccounts(){
+  document.getElementById("admAccounts").textContent=an(ADMIN_ACCOUNTS.length);
+  document.getElementById("admTrial").textContent=an(ADMIN_ACCOUNTS.filter(x=>String(x.plan_code).toLowerCase()==="trial").length);
+  document.getElementById("admBasic").textContent=an(ADMIN_ACCOUNTS.filter(x=>String(x.plan_code).toLowerCase()==="basic").length);
+  document.getElementById("admPaid").textContent=an(ADMIN_ACCOUNTS.filter(x=>["advanced","pro"].includes(String(x.plan_code).toLowerCase())).length);
+  document.getElementById("admAccountList").innerHTML=ADMIN_ACCOUNTS.length?ADMIN_ACCOUNTS.map(x=>`
+    <div class="adminRow adminAccount" data-search="${ae([x.email,x.user_id,x.api_key,x.plan_code].join(" ").toLowerCase())}">
+      <div class="adminHead"><strong>${ae(x.email)}</strong><span class="adminBadge ${x.is_active?"active":"inactive"}">${x.is_active?"ACTIVE":"TẮT"}</span></div>
+      <div class="grid">
+        <div><div class="label">Gói</div><div>${ae(ap(x.plan_code))}</div></div>
+        <div><div class="label">Requests hôm nay</div><div>${an(x.today_requests)}</div></div>
+        <div><div class="label">Tổng requests</div><div>${an(x.total_requests)}</div></div>
+        <div><div class="label">Hạn sử dụng</div><div>${ad(x.expires_at)}</div></div>
+        <div style="grid-column:1/-1"><div class="label">User ID</div><div class="adminKey">${ae(x.user_id)}</div></div>
+        <div style="grid-column:1/-1"><div class="label">API key</div><div class="adminKey">${ae(x.api_key)}</div></div>
+      </div>
+    </div>`).join(""):'<div class="muted" style="padding:16px">Chưa có tài khoản.</div>';
+}
+
+async function approveOrder(id,b){
+  if(!confirm("Duyệt đơn #"+id+"?"))return;
+  b.disabled=true;
+  const {error}=await sb.rpc("approve_upgrade_request",{p_request_id:Number(id)});
+  if(error){b.disabled=false;showNotice("Duyệt thất bại: "+error.message);return}
+  showNotice("Đã duyệt đơn #"+id+".","ok"); await loadAdmin();
+}
+async function rejectOrder(id,b){
+  if(!confirm("Từ chối đơn #"+id+"?"))return;
+  b.disabled=true;
+  const {error}=await sb.rpc("reject_upgrade_request",{p_request_id:Number(id)});
+  if(error){b.disabled=false;showNotice("Từ chối thất bại: "+error.message);return}
+  showNotice("Đã từ chối đơn #"+id+".","ok"); await loadAdmin();
+}
+
+async function loadAdmin(){
+  const [a,o]=await Promise.all([
+    sb.rpc("admin_list_accounts"),
+    sb.rpc("admin_list_upgrade_requests")
+  ]);
+  if(a.error){showNotice("Lỗi đọc khách hàng: "+a.error.message);return}
+  if(o.error){showNotice("Lỗi đọc đơn hàng: "+o.error.message);return}
+  ADMIN_ACCOUNTS=a.data||[]; ADMIN_ORDERS=o.data||[];
+  renderAccounts(); renderOrders();
+}
+
+document.querySelectorAll(".adminTab").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".adminTab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".adminPanel").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.getElementById("admPanel"+b.dataset.tab[0].toUpperCase()+b.dataset.tab.slice(1)).classList.add("active");
+});
+document.getElementById("admOrderSearch").oninput=e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll("#admOrderList .adminOrder").forEach(x=>x.style.display=!q||x.dataset.search.includes(q)?"":"none");
+};
+document.getElementById("admAccountSearch").oninput=e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll("#admAccountList .adminAccount").forEach(x=>x.style.display=!q||x.dataset.search.includes(q)?"":"none");
+};
+document.getElementById("adminRefreshBtn").onclick=loadAdmin;
+
+
+(async()=>{
+  if(!configured){
+    showNotice("Dashboard chưa được cấu hình Publishable/Anon Key.");
+    return;
+  }
+
+  const {data:{session},error}=await sb.auth.getSession();
+
+  if(error){
+    showNotice(error.message);
+    return;
+  }
+
+  if(!session?.user){
+    location.href="./login.html";
+    return;
+  }
+
+  const user=session.user;
+  document.getElementById("openWelcomeBtn").onclick=()=>showWelcome(user,true);
+  showWelcome(user);
+  const name=user.user_metadata?.full_name||user.email?.split("@")[0]||"bạn";
+
+  document.getElementById("userName").textContent=name;
+  document.getElementById("userEmail").textContent=user.email||"";
+  document.getElementById("accountEmail").textContent=user.email||"-";
+  document.getElementById("accountUid").textContent=user.id||"-";
+
+  createKeyBtn.onclick=()=>createUserApiKey(user);
+
+  if(await isAdmin(user)){
+    document.getElementById("adminArea").style.display="block";
+    await loadAdmin();
+  }
+
+  await Promise.all([
+    loadUsage(user),
+    loadUserPlan(user),
+    loadUserApiKey(user)
+  ]);
+})();
+
+
+// Đồng bộ tên gói ở ô tóm tắt mà không thay đổi logic dữ liệu gốc.
+const _planObserver=new MutationObserver(()=>{
+  const m=document.getElementById("planNameMirror");
+  if(m) m.textContent=document.getElementById("planName")?.textContent||"-";
+});
+_planObserver.observe(document.getElementById("planName"),{childList:true,subtree:true,characterData:true});
+</script>
+<a href="./XOSOAPI_LIVE_v3_DEMO.html"
+   style="display:block;background:#dc2626;color:white;
+   text-align:center;padding:15px;border-radius:12px;
+   font-weight:bold;margin:15px">
+  🔴 LIVE XỔ SỐ
+</a>
+</body>
+</html>
