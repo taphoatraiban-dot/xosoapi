@@ -1,0 +1,55 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XOSOAPI | VIP & PRO Thống Kê</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#081421;color:#ecf5ff;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}main{max-width:920px;margin:auto;padding:18px}header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 22px}a{color:#8cdbff}a.btn,button{display:inline-block;border:none;border-radius:12px;padding:13px 18px;font-weight:800;color:white;background:#147cba;text-decoration:none;cursor:pointer}.card{background:#112238;border:1px solid #2b4564;border-radius:18px;padding:20px;margin:12px 0}.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.plan{border:2px solid #324963;border-radius:15px;padding:18px;background:#0a1b2d}.plan h2{margin:0 0 8px}.price{font-size:30px;font-weight:900;color:#48edb0}.plan small{color:#a9bcce}.plan button{width:100%;margin-top:12px;background:#0b9a6c}.plan.free button{background:#34566e}#pay{display:none}#pay.active{display:block}.qr{display:block;width:min(300px,100%);background:white;padding:7px;border-radius:14px;margin:16px auto}.pay-detail{background:#0a1b2d;border-radius:10px;padding:15px;line-height:1.8;word-break:break-word}#msg{padding:12px;border-radius:9px;margin-top:12px;background:#213c4a;display:none;white-space:pre-wrap}.muted{color:#a9bcce}.small{font-size:13px}.warning{border-left:4px solid #ffc66e;padding-left:12px}@media(max-width:650px){.plans{grid-template-columns:1fr}}
+</style></head><body><main>
+<header><strong style="font-size:22px">✦ XOSOAPI — THÀNH VIÊN</strong><a class="btn" href="./dashboard.html">Dashboard</a></header>
+<div class="card"><h1>VIP & PRO — Thống kê xổ số</h1><p class="muted">Đây là gói xem thống kê trên website, <b>không phải gói mua API Key</b>. Các gói API Cơ Bản 99.000đ và Pro 249.000đ vẫn giữ nguyên.</p><div id="account" class="muted">Đang kiểm tra đăng nhập…</div></div>
+<div class="plans">
+<div class="plan free"><h2>Miễn phí</h2><div class="price">0đ</div><p>Dùng các nội dung miễn phí được website cho phép.</p><button type="button" onclick="choose('free')">Đang miễn phí</button></div>
+<div class="plan"><h2>VIP</h2><div class="price">39.000đ <small>/ 30 ngày</small></div><p>Truy cập chức năng thống kê VIP (khi tính năng được cấu hình phân quyền).</p><button type="button" onclick="choose('vip')">Đăng ký VIP</button></div>
+<div class="plan"><h2>PRO</h2><div class="price">79.000đ <small>/ 30 ngày</small></div><p>Truy cập chức năng thống kê PRO (khi tính năng được cấu hình phân quyền).</p><button type="button" onclick="choose('pro')">Đăng ký PRO</button></div>
+</div>
+<section id="pay" class="card"><h2 id="heading">Thanh toán</h2><p class="warning">Hệ thống không xác nhận chuyển khoản tự động. Admin phải kiểm tra giao dịch trước khi duyệt; nhấn xác nhận không cấp quyền ngay.</p><img id="qr" class="qr" alt="Mã QR chuyển khoản"/><div class="pay-detail"><div>Ngân hàng: <b>VPBank</b></div><div>Số tài khoản: <b>0928922456</b></div><div>Chủ tài khoản: <b>VI VĂN TIẾN</b></div><div>Số tiền: <b id="money"></b></div><div>Nội dung: <b id="note"></b></div></div><button type="button" id="submit" style="width:100%;margin-top:16px;background:#0b9a6c">Tôi đã chuyển khoản — Gửi yêu cầu duyệt</button><div id="msg" role="status"></div></section>
+<div class="card small"><b>Gói API Key (riêng biệt)</b><p>Gói Cơ Bản 99.000đ và Pro cao cấp 249.000đ vẫn mua ở trang API như trước.</p><a href="./pricing.html">Đến trang mua API Key →</a></div>
+</main><script>
+const sb=supabase.createClient("https://zigpqddlhvjbjrwhfhaa.supabase.co","sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni");
+const $=id=>document.getElementById(id);let user=null,chosen=null;
+const codes={vip:{name:"VIP",price:39000},pro:{name:"PRO",price:79000}};
+function msg(t){$("msg").style.display="block";$("msg").textContent=t}
+function choose(code){
+ if(code==="free")return;
+ if(!user){location.href="./login.html";return;}
+ chosen=code;let p=codes[code];
+ $("pay").classList.add("active");$("heading").textContent="Đăng ký "+p.name+" — 30 ngày";
+ $("money").textContent=p.price.toLocaleString("vi-VN")+"đ";
+ const suffix=user.id.replace(/-/g,"").slice(0,12).toUpperCase();
+ const content="XOSO VIP "+code.toUpperCase()+" "+suffix;
+ $("note").textContent=content;
+ $("qr").src="https://img.vietqr.io/image/VPB-0928922456-compact2.png?amount="+p.price+"&addInfo="+encodeURIComponent(content)+"&accountName="+encodeURIComponent("VI VAN TIEN");
+ $("submit").disabled=false;$("msg").style.display="none";
+ $("pay").scrollIntoView({behavior:"smooth"});
+}
+$("submit").onclick=async()=>{
+ if(!user||!chosen)return;
+ const b=$("submit");b.disabled=true;
+ try{
+  const p=codes[chosen], note=$("note").textContent;
+  const {error}=await sb.from("website_membership_requests").insert({
+   user_id:user.id,plan_code:chosen,amount:p.price,transfer_note:note
+  });
+  if(error)throw error;
+  msg("Đã gửi yêu cầu. Vui lòng chờ Admin kiểm tra chuyển khoản và kích hoạt quyền.");
+ }catch(e){msg("Chưa gửi được yêu cầu: "+(e.message||e)+". Cần chạy file SQL cấu hình bảng trước.");b.disabled=false;}
+};
+(async()=>{
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.user){$("account").innerHTML='Chưa đăng nhập. <a href="./login.html">Đăng nhập</a> để yêu cầu nâng cấp.';return;}
+ user=session.user;
+ $("account").textContent="Tài khoản: "+(user.email||user.id);
+ const {data,error}=await sb.from("website_memberships").select("plan_code,expires_at").eq("user_id",user.id).maybeSingle();
+ if(!error&&data&&data.expires_at&&new Date(data.expires_at)>new Date()){
+  $("account").textContent+=" • Gói thống kê: "+data.plan_code.toUpperCase()+" • Hết hạn: "+new Date(data.expires_at).toLocaleDateString("vi-VN");
+ }
+})();
+</script></body></html>
