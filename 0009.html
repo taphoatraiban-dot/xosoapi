@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOSOAPI Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--panel:#0e1a2b;--panel2:#0a1524;--text:#f4f7fb;--muted:#8fa0b7;--line:#233853;--green:#13d48e;--red:#ef4444;--gold:#f4b740}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.top{height:76px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#08121f}
+.brand{font-size:21px;font-weight:900}
+.wrap{max-width:980px;margin:auto;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+h1,h2{margin:0 0 10px}.muted{color:var(--muted)}
+.btn{border:1px solid var(--line);background:#17263a;color:#fff;padding:11px 14px;border-radius:11px;font-weight:900;cursor:pointer}
+.btn.green{background:#0f9f71}.btn.red{background:#a12727}.btn:disabled{opacity:.55;cursor:not-allowed}
+.order{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.label{font-size:12px;color:var(--muted);margin-bottom:3px}.value{font-weight:800;word-break:break-word}
+.status{display:inline-block;padding:5px 9px;border-radius:999px;background:#3a2d09;color:#ffd977;font-weight:900;font-size:12px}
+.actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.notice{display:none;padding:12px;border-radius:12px;margin-top:12px}
+.notice.ok{display:block;background:#0b3424;border:1px solid #176b49;color:#83f2bd}
+.notice.err{display:block;background:#3b1515;border:1px solid #7f1d1d;color:#fecaca}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;margin-top:12px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.summary .box{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.summary .n{font-size:24px;font-weight:900}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:#0a1524;color:#fff;font-weight:800;cursor:pointer}.tab.active{background:#0f9f71}.hidden{display:none!important}.search{width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);background:#081423;color:#fff;margin:10px 0}.status.approved{background:#0b3424;color:#83f2bd}.status.rejected{background:#3b1515;color:#fecaca}
+@media(max-width:650px){.grid,.summary{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">✦ XOSOAPI Admin</div>
+  <button class="btn" id="backBtn">Dashboard</button>
+</header>
+
+<main class="wrap">
+<section class="card">
+  <h1>Quản trị XOSOAPI</h1>
+  <div class="muted" id="adminEmail">Đang kiểm tra quyền admin...</div>
+  <div class="summary">
+    <div class="box"><div class="label">Tất cả đơn</div><div class="n" id="allOrderCount">0</div></div>
+    <div class="box"><div class="label">Đơn chờ</div><div class="n" id="pendingCount">0</div></div>
+    <div class="box"><div class="label">Đã duyệt</div><div class="n" id="approvedCount">0</div></div>
+    <div class="box"><div class="label">Tổng giá trị đơn</div><div class="n" id="totalAmount">0đ</div></div>
+    <div class="box"><div class="label">Tài khoản/API key</div><div class="n" id="accountCount">0</div></div>
+    <div class="box"><div class="label">Trial</div><div class="n" id="trialCount">0</div></div>
+    <div class="box"><div class="label">Basic</div><div class="n" id="basicCount">0</div></div>
+    <div class="box"><div class="label">Advanced + Pro</div><div class="n" id="paidCount">0</div></div>
+  </div>
+  <div id="notice" class="notice"></div>
+</section>
+
+<div class="tabs">
+ <button class="tab active" data-tab="pending">Đơn chờ duyệt</button>
+ <button class="tab" data-tab="all">Tất cả đơn</button>
+ <button class="tab" data-tab="accounts">Tất cả tài khoản</button>
+</div>
+
+<section class="card" id="pendingPanel"><h2>Đơn chờ xác nhận</h2><div id="pendingOrders"></div></section>
+<section class="card hidden" id="allPanel"><h2>Tất cả đơn</h2><input id="orderSearch" class="search" placeholder="Tìm email, gói, mã đơn, nội dung chuyển khoản..."><div id="allOrders"></div></section>
+<section class="card hidden" id="accountsPanel"><h2>Tất cả tài khoản</h2><input id="accountSearch" class="search" placeholder="Tìm user ID, API key, gói..."><div id="accounts"></div></section>
+</main>
+
+<script>
+const SUPABASE_URL="https://zigpqddlhvjbjrwhfhaa.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const notice=document.getElementById("notice");
+let ORDERS=[],ACCOUNTS=[],USAGE=[];
+document.getElementById("backBtn").onclick=()=>location.href="./dashboard.html";
+function showNotice(t,k="err"){notice.className="notice "+k;notice.textContent=t}
+function clearNotice(){notice.className="notice";notice.textContent=""}
+function fmt(n){return Number(n||0).toLocaleString("vi-VN")}
+function fmtDate(v){if(!v)return "-";try{return new Date(v).toLocaleString("vi-VN")}catch{return v}}
+function esc(v){return String(v??"-").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function plan(v){v=String(v||"").toLowerCase();return v==="trial"?"Dùng thử":v==="basic"?"Cơ Bản":v==="advanced"?"Nâng Cao":v==="pro"?"Pro":v||"-"}
+async function isAdmin(user){const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();return !error&&!!data}
+async function approve(id,btn){if(!confirm("Duyệt đơn #"+id+"?"))return;btn.disabled=true;const {error}=await sb.rpc("approve_upgrade_request",{p_request_id:id});if(error){btn.disabled=false;showNotice("Duyệt thất bại: "+error.message);return}showNotice("Đã duyệt đơn #"+id+".","ok");await loadAll()}
+async function reject(id,btn){if(!confirm("Từ chối đơn #"+id+"?"))return;btn.disabled=true;const {error}=await sb.rpc("reject_upgrade_request",{p_request_id:id});if(error){btn.disabled=false;showNotice("Từ chối thất bại: "+error.message);return}showNotice("Đã từ chối đơn #"+id+".","ok");await loadAll()}
+function card(o,buttons=false){let st=String(o.status||"pending").toLowerCase();return `<div class="order item" data-search="${esc([o.id,o.email,o.user_id,o.plan_code,o.transfer_note,o.status].join(" ").toLowerCase())}"><div style="display:flex;justify-content:space-between;gap:8px"><h2>Đơn #${esc(o.id)}</h2><span class="status ${esc(st)}">${esc(st)}</span></div><div class="grid"><div><div class="label">Email khách</div><div class="value">${esc(o.email)}</div></div><div><div class="label">User ID</div><div class="value">${esc(o.user_id)}</div></div><div><div class="label">Gói</div><div class="value">${esc(plan(o.plan_code))}</div></div><div><div class="label">Số tiền</div><div class="value">${fmt(o.amount)}đ</div></div><div><div class="label">Thời hạn</div><div class="value">${esc(o.duration_months||1)} tháng</div></div><div><div class="label">Ngày tạo</div><div class="value">${fmtDate(o.created_at)}</div></div><div><div class="label">Ngày xử lý</div><div class="value">${fmtDate(o.reviewed_at)}</div></div><div><div class="label">Hạn hiện tại</div><div class="value">${fmtDate(o.current_expires_at)}</div></div><div style="grid-column:1/-1"><div class="label">Nội dung chuyển khoản</div><div class="value">${esc(o.transfer_note)}</div></div></div>${buttons?`<div class="actions"><button class="btn green approveBtn" data-id="${esc(o.id)}">Duyệt</button><button class="btn red rejectBtn" data-id="${esc(o.id)}">Từ chối</button></div>`:""}</div>`}
+function bind(root){root.querySelectorAll(".approveBtn").forEach(b=>b.onclick=e=>approve(b.dataset.id,e.currentTarget));root.querySelectorAll(".rejectBtn").forEach(b=>b.onclick=e=>reject(b.dataset.id,e.currentTarget))}
+function renderOrders(){let p=ORDERS.filter(x=>String(x.status).toLowerCase()==="pending");document.getElementById("allOrderCount").textContent=ORDERS.length;document.getElementById("pendingCount").textContent=p.length;document.getElementById("approvedCount").textContent=ORDERS.filter(x=>String(x.status).toLowerCase()==="approved").length;document.getElementById("totalAmount").textContent=fmt(ORDERS.reduce((a,x)=>a+Number(x.amount||0),0))+"đ";let pe=document.getElementById("pendingOrders");pe.innerHTML=p.length?p.map(x=>card(x,true)).join(""):'<div class="empty">Không có đơn pending.</div>';bind(pe);document.getElementById("allOrders").innerHTML=ORDERS.length?ORDERS.map(x=>card(x)).join(""):'<div class="empty">Chưa có đơn.</div>'}
+function renderAccounts(){document.getElementById("accountCount").textContent=ACCOUNTS.length;document.getElementById("trialCount").textContent=ACCOUNTS.filter(x=>x.plan_code==="trial").length;document.getElementById("basicCount").textContent=ACCOUNTS.filter(x=>x.plan_code==="basic").length;document.getElementById("paidCount").textContent=ACCOUNTS.filter(x=>["advanced","pro"].includes(x.plan_code)).length;let el=document.getElementById("accounts");if(!ACCOUNTS.length){el.innerHTML='<div class="empty">Chưa đọc được toàn bộ tài khoản. Nếu RLS chặn, cần thêm RPC Admin ở bước tiếp theo.</div>';return}el.innerHTML=ACCOUNTS.map(a=>{let u=USAGE.filter(x=>String(x.api_key_id)===String(a.id)),tot=u.reduce((z,x)=>z+Number(x.request_count||0),0);return `<div class="order item" data-search="${esc([a.user_id,a.api_key,a.plan_code].join(" ").toLowerCase())}"><div style="display:flex;justify-content:space-between"><h2>${esc(plan(a.plan_code))}</h2><span class="status ${a.is_active?"approved":"rejected"}">${a.is_active?"ACTIVE":"TẮT"}</span></div><div class="grid"><div><div class="label">User ID</div><div class="value">${esc(a.user_id)}</div></div><div><div class="label">API key</div><div class="value">${esc(a.api_key)}</div></div><div><div class="label">Ngày tạo</div><div class="value">${fmtDate(a.created_at)}</div></div><div><div class="label">Hạn sử dụng</div><div class="value">${fmtDate(a.expires_at)}</div></div><div><div class="label">Tổng request</div><div class="value">${fmt(tot)}</div></div></div></div>`}).join("")}
+async function loadAll(){clearNotice();let o=await sb.rpc("admin_list_upgrade_requests");if(o.error){showNotice("Không đọc được đơn: "+o.error.message);ORDERS=[]}else ORDERS=o.data||[];renderOrders();let k=await sb.from("user_api_keys").select("id,user_id,api_key,is_active,plan_code,created_at,expires_at").order("created_at",{ascending:false});ACCOUNTS=k.error?[]:(k.data||[]);let u=await sb.from("api_usage_daily").select("api_key_id,usage_date,request_count");USAGE=u.error?[]:(u.data||[]);renderAccounts()}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["pending","all","accounts"].forEach(x=>document.getElementById(x+"Panel").classList.toggle("hidden",x!==b.dataset.tab))});
+document.getElementById("orderSearch").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#allOrders .item").forEach(x=>x.classList.toggle("hidden",q&&!x.dataset.search.includes(q)))};
+document.getElementById("accountSearch").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll("#accounts .item").forEach(x=>x.classList.toggle("hidden",q&&!x.dataset.search.includes(q)))};
+(async()=>{const {data:{session},error}=await sb.auth.getSession();if(error){showNotice(error.message);return}if(!session?.user){location.href="./login.html";return}document.getElementById("adminEmail").textContent=session.user.email||"";if(!(await isAdmin(session.user))){showNotice("Tài khoản này chưa có quyền Admin.");return}await loadAll()})();
+</script>
+</body>
+</html>
