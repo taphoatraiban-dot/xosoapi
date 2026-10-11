@@ -1,5 +1,0 @@
-1. Tải 2 file HTML lên thư mục gốc GitHub.
-2. Mở https://xosothantaiapi.info/goi-dich-vu.html
-3. Kiểm tra các nút: Thành viên -> thanh-vien.html, API Key -> pricing.html.
-4. Chưa thay pricing.html, dashboard.html hoặc backend.
-5. VIP/PRO thành viên chưa mở bán; cần phân quyền Supabase trước.
