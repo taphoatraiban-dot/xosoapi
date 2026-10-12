@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
+
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://xosothantaiapi.info/</loc>
@@ -17,5 +18,17 @@
   </url>
   <url>
     <loc>https://xosothantaiapi.info/lien-he.html</loc>
+  </url>
+  <url>
+    <loc>https://xosothantaiapi.info/vietlott.html</loc>
+  </url>
+  <url>
+    <loc>https://xosothantaiapi.info/soi-cau.html</loc>
+  </url>
+  <url>
+    <loc>https://xosothantaiapi.info/test.html</loc>
+  </url>
+  <url>
+    <loc>https://xosothantaiapi.info/pricing.html</loc>
   </url>
 </urlset>
