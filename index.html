@@ -22,6 +22,43 @@
 .drawer button,.drawer a{font:inherit}.drawer-group{margin:8px 12px;border-radius:11px;overflow:hidden}.drawer-group>button{display:flex;justify-content:space-between;align-items:center;width:100%;background:#f0f8fb;border:0;padding:13px 15px;font-weight:850;color:#17445d;text-align:left}.drawer-group>button[aria-expanded="true"]{background:#d9f5f3;color:#056578}.drawer-group>button span{font-size:18px}.drawer-links{display:none;padding:4px 10px 9px;background:#fff}.drawer-links.open{display:block}.drawer-links button,.drawer-links a{display:block;border:0;background:transparent;color:#23394e;width:100%;text-align:left;text-decoration:none;padding:11px 17px;font-size:15px;border-bottom:1px solid #edf2f5}.drawer-links button:hover,.drawer-links a:hover{background:#ecf8f9}.drawer-footer{padding:20px;font-size:12px;color:#638093;text-align:center}.drawer-close{position:absolute;top:10px;right:12px;background:#ffffff25!important;color:white!important;border:1px solid #ffffff70!important;width:38px;height:38px;border-radius:7px;font-size:22px!important}
 body.menu-open{overflow:hidden}
 @media(max-width:430px){.header{padding:10px 7px;gap:6px}.logo{font-size:13px;gap:5px}.logo img{width:32px;height:32px}.account a{font-size:11px;padding:7px 5px}.hamburger{font-size:22px;padding:6px 9px}.menu a{padding:12px 13px}}
+
+/* Sửa logo và tên miền không xuống dòng */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logo {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 6px;
+}
+
+.logo img {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.logo span {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-size: clamp(11px, 2.7vw, 20px);
+  letter-spacing: -0.5px;
+}
+
+.account {
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+@media (max-width: 430px) {
+  .header { padding: 9px 6px; gap: 5px; }
+  .hamburger { padding: 6px 9px; }
+  .account a { padding: 7px 5px; font-size: 11px; }
+}
 </style></head><body>
 <div id="menuShade" class="shade" aria-hidden="true"></div>
 <aside id="sideDrawer" class="drawer" aria-label="Danh mục xổ số" aria-hidden="true">
