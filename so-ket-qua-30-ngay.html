@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sổ kết quả 30 ngày | XOSOAPI</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#123746;background:#edf5f8}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(115deg,#06466b,#008b92);color:white;padding:19px 15px}header .inner,main{max-width:900px;margin:auto}h1{font-size:22px;margin:10px 0 5px}header a{color:white;text-decoration:none}.muted{color:#637988;font-size:13px}.intro{color:#daffff;font-size:13px}main{padding:16px 12px 40px}.panel{background:white;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 2px 12px #10436213}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.tabs button{background:#e9f3f6;border:1px solid #cde2e8;color:#175269;border-radius:10px;padding:12px 3px;font-weight:800;cursor:pointer}.tabs button.active{background:#087c83;border-color:#087c83;color:white}.bar{display:flex;gap:9px;align-items:center;justify-content:space-between;flex-wrap:wrap}input[type=date]{font:inherit;padding:9px;border:1px solid #c7dbe0;border-radius:9px;max-width:100%}.daylist{display:flex;gap:7px;overflow-x:auto;padding:12px 0 5px;scrollbar-width:thin}.daylist button{flex:0 0 auto;background:#eff7fa;border:1px solid #c9e1e9;border-radius:9px;padding:8px 10px;cursor:pointer;color:#164b61}.daylist button.active{background:#087c83;color:white}.status{padding:10px;border-radius:9px;background:#eaf4f7;font-size:14px;margin-top:10px}.error{background:#fff0ed;color:#9b382b}.province{margin-top:15px;border:1px solid #d4e6ea;border-radius:11px;overflow:hidden}.province h2{font-size:17px;margin:0;padding:12px;background:#dff1f3}.prize{display:grid;grid-template-columns:76px 1fr;border-top:1px solid #e4edef;min-height:38px}.prize b{background:#f5fafb;padding:10px 7px;text-align:center}.nums{padding:10px 8px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}.num{font-weight:700;font-size:17px;letter-spacing:.4px}.db .num{color:#c5292b;font-size:22px}.empty{padding:22px 10px;text-align:center;color:#657982}.hint{margin-top:8px;font-size:12px;color:#647983}
+</style>
+</head>
+<body>
+<header><div class="inner"><a href="/">← Trang chủ</a><h1>📅 Sổ kết quả xổ số 30 ngày</h1><div class="intro">XOSOAPI — Kết quả Miền Nam, Miền Trung, Miền Bắc</div></div></header>
+<main>
+<section class="panel"><div class="tabs" role="group" aria-label="Chọn miền"><button data-region="MN" class="active">Miền Nam</button><button data-region="MT">Miền Trung</button><button data-region="MB">Miền Bắc</button></div><div class="bar" style="margin-top:15px"><strong id="heading">Kết quả Miền Nam</strong><label>Ngày <input type="date" id="date"></label></div><div id="days" class="daylist" aria-label="Chọn một trong 30 ngày"></div><p class="hint">Chọn ngày bên trên để xem kết quả. Chỉ hiển thị dữ liệu đã có trên API.</p><div id="status" class="status" role="status">Đang tải...</div></section>
+<section id="results" class="panel" aria-live="polite"></section>
+</main>
+<script>
+(()=>{
+'use strict';
+const API='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';
+const PUBLIC_KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+const prizeKeys={db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2};
+function extractDraws(value,region,date){
+ const out=[];
+ function walk(v,province,depth){
+  if(depth>12||v==null)return;
+  if(typeof v==='string'&&/^[\[{]/.test(v.trim())){try{return walk(JSON.parse(v),province,depth+1)}catch(e){return}}
+  if(Array.isArray(v)){v.forEach(x=>walk(x,province,depth+1));return}
+  if(typeof v!=='object')return;
+  const prov=String(v.province||v.station||v.tinh||v.name||province||(region==='MB'?'Miền Bắc':'Không rõ đài'));
+  if(v.prizes&&typeof v.prizes==='object'){
+   const prizes={};for(let [k,val] of Object.entries(v.prizes)){
+    let canonical=k.toLowerCase().replace(/[^a-z0-9]/g,'');if(canonical==='special'||canonical==='dacbiet')canonical='db';
+    if(!Object.hasOwn(prizeKeys,canonical))continue;
+    const raw=Array.isArray(val)?val:[val];
+    const nums=raw.map(x=>typeof x==='number'||typeof x==='string'?String(x).trim():'').filter(x=>/^\d+$/.test(x)&&x.length===(region==='MB'?({db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}[canonical]||0):prizeKeys[canonical]));
+    if(nums.length)prizes[canonical]=nums;
+   }
+   if(Object.keys(prizes).length)out.push({region,date,province:prov,prizes});
+  }
+  for(const [k,child] of Object.entries(v))if(!['prizes','province','station','tinh','name'].includes(k)&&child&&typeof child==='object')walk(child,prov,depth+1);
+ }
+ walk(value,'',0);return out;
+}
+const $=id=>document.getElementById(id);
+const names={MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc'};
+const order=['db','g1','g2','g3','g4','g5','g6','g7','g8'];
+const labels={db:'ĐB',g1:'Giải 1',g2:'Giải 2',g3:'Giải 3',g4:'Giải 4',g5:'Giải 5',g6:'Giải 6',g7:'Giải 7',g8:'Giải 8'};
+const pad=n=>String(n).padStart(2,'0');
+const localISO=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const format=d=>{const [y,m,day]=d.split('-');return `${day}/${m}/${y}`};
+const today=new Date(); today.setHours(12,0,0,0);
+const dates=Array.from({length:30},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-i);return localISO(d)});
+let region='MN',selected=dates[0],request=0;
+const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function status(message,error=false){$('status').textContent=message;$('status').className='status'+(error?' error':'')}
+function renderDays(){ $('days').innerHTML=dates.map(d=>`<button type="button" data-date="${d}" class="${d===selected?'active':''}">${format(d).slice(0,5)}</button>`).join(''); $('date').value=selected;}
+function render(data){
+ const rows=Array.isArray(data)?data:(data&&typeof data==='object'?[data]:[]);
+ if(!rows.length){$('results').innerHTML='<div class="empty">Ngày này chưa có kết quả trong API.</div>';return}
+ $('results').innerHTML=rows.map((entry,i)=>{
+  const province=safe(entry.province||entry.name||entry.station||(region==='MB'?'Miền Bắc':`Đài ${i+1}`));
+  const prizes=entry.prizes||entry.results||{};
+  const html=order.filter(key=>prizes[key]!=null).map(key=>{
+   const raw=prizes[key];
+   const nums=(Array.isArray(raw)?raw:[raw]).filter(x=>x!=null&&String(x).trim()!=='');
+   // API đôi khi trả về phần tử cuối là mã phụ, chỉ hiển thị các số theo độ dài giải nếu hợp lệ.
+   const lengths=region==='MB'?{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2};
+   const clean=nums.filter(n=>/^\d+$/.test(String(n))&&(!lengths[key]||String(n).length===lengths[key]));
+   const shown=(clean.length?clean:nums).map(n=>`<span class="num">${safe(n)}</span>`).join('');
+   return `<div class="prize ${key==='db'?'db':''}"><b>${labels[key]}</b><div class="nums">${shown}</div></div>`;
+  }).join('');
+  return `<article class="province"><h2>${province}</h2>${html||'<div class="empty">Chưa có chi tiết giải</div>'}</article>`;
+ }).join('');
+}
+async function load(){
+ const current=++request;
+ $('heading').textContent=`Kết quả ${names[region]} — ${format(selected)}`;
+ $('results').innerHTML='';status(`Đang tải kết quả ${names[region]} ngày ${format(selected)}...`);
+ try{
+  const url=new URL(API);
+  url.searchParams.set('select','region,draw_date,data');
+  url.searchParams.set('region','eq.'+region);
+  url.searchParams.set('draw_date','eq.'+selected);
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),16000);
+  let response;
+  try{response=await fetch(url,{signal:controller.signal,headers:{apikey:PUBLIC_KEY,Accept:'application/json'},cache:'no-store'})}finally{clearTimeout(timeout)}
+  if(!response.ok)throw new Error(`API trả về mã ${response.status}`);
+  const json=await response.json(); if(current!==request)return;
+  const entries=[];
+  for(const row of json)entries.push(...extractDraws(row.data,region,row.draw_date));
+  const unique=[...new Map(entries.map(x=>[x.province+'|'+JSON.stringify(x.prizes),x])).values()];
+  render(unique);
+  status(unique.length?`Đang xem ${names[region]} • ${format(selected)} • ${unique.length} đài`:`Chưa có kết quả ${names[region]} ngày ${format(selected)} trong dữ liệu.`);
+ }catch(e){if(current!==request)return; $('results').innerHTML='<div class="empty">Chưa thể hiển thị kết quả. Vui lòng thử ngày khác hoặc tải lại.</div>'; status(`Không tải được dữ liệu: ${e.name==='AbortError'?'Quá thời gian kết nối':e.message}`,true)}
+}
+document.querySelectorAll('[data-region]').forEach(b=>b.onclick=()=>{region=b.dataset.region;document.querySelectorAll('[data-region]').forEach(x=>x.classList.toggle('active',x===b));load()});
+$('days').onclick=e=>{const b=e.target.closest('button[data-date]');if(!b)return;selected=b.dataset.date;renderDays();load()};
+$('date').min=dates[29];$('date').max=dates[0];$('date').onchange=e=>{if(!dates.includes(e.target.value)){status('Chỉ chọn ngày trong 30 ngày gần nhất.',true);e.target.value=selected;return}selected=e.target.value;renderDays();load()};
+renderDays();load();
+})();
+</script>
+</body>
+</html>
