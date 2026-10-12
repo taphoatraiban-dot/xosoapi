@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thống kê xổ số và sổ kết quả 30 ngày | XOSOAPI</title>
+<meta name="description" content="Thống kê tần suất lô tô, lô tô gan, cặp lô tô, giải đặc biệt, giải nhất, đầu đuôi và sổ kết quả xổ số 30 ngày dựa trên dữ liệu thực.">
+<meta name="robots" content="index,follow"><link rel="canonical" href="https://xosothantaiapi.info/thong-ke-xoso.html">
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#183448;background:#f3f9fc}*{box-sizing:border-box}
+body{margin:0}header{background:#064763;color:white;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header b{font-size:18px;overflow-wrap:anywhere}a{color:inherit}.back{font-size:13px;white-space:nowrap}
+main{max-width:1050px;margin:auto;padding:13px}.box{background:white;border:1px solid #d0e4ed;border-radius:15px;padding:16px;margin-bottom:12px}
+h1{font-size:23px;margin:5px 0 12px;color:#075a78}h2{font-size:17px;color:#075a78;margin:0 0 9px}
+.controls{display:flex;flex-wrap:wrap;gap:8px}.controls label{flex:1;min-width:115px;font-size:13px}
+select,button{font:inherit;padding:11px;border:1px solid #b6d9e7;border-radius:9px;background:white;color:#17415a;width:100%;margin-top:5px}
+button{background:#078b98;color:white;font-weight:750;border:0;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.tabs button{margin:0;background:#ebf7fb;color:#125270;border:1px solid #c1deeb;font-size:13px}
+.tabs button.active{background:#087c90;color:white}
+.note{font-size:13px;color:#607c8d;line-height:1.55}
+#status{font-size:13px;color:#55798b;padding:8px 0}.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;text-align:center}th,td{border:1px solid #d1e1e9;padding:9px 6px}th{background:#e7f6fa;color:#0b607e}tr:nth-child(even){background:#f5fafc}
+.nums{font-weight:800;letter-spacing:.5px;line-height:1.8} .danger{color:#ca531a}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:6px 9px;border-radius:8px;background:#e8f6fb;font-weight:700}
+.sep{margin-top:18px}.min{font-size:12px;color:#6a8293}.datehead{padding:12px;background:#066b86;color:#fff;border-radius:10px 10px 0 0;font-weight:800}
+.empty{padding:12px;background:#eff9fc;color:#715b3e;border-radius:8px}.footer{text-align:center;font-size:12px;color:#668096;padding:20px}
+</style></head><body>
+<header><b>✦ XOSOAPI · Thống kê</b><a class="back" href="./index.html">← Trang chủ</a></header>
+<main><h1>Thống kê xổ số & sổ kết quả</h1>
+<section class="box"><div class="controls">
+<label>Miền<select id="region"><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc</option></select></label>
+<label>Đài<select id="province"><option value="">Toàn miền</option></select></label>
+<label>Khoảng thời gian<select id="days"><option value="7">7 ngày</option><option value="30" selected>30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option></select></label>
+</div><p id="status" role="status">Đang chuẩn bị dữ liệu…</p><button id="reload">↻ Tải thống kê</button></section>
+<section class="tabs" aria-label="Danh mục thống kê">
+<button data-view="freq" class="active">Tần suất lô tô</button><button data-view="gan">Lô tô gan</button>
+<button data-view="pairs">Tần suất cặp lô tô</button><button data-view="special">Giải đặc biệt</button>
+<button data-view="head">Đầu – đuôi</button><button data-view="first">Giải nhất</button>
+<button data-view="weekly">Đặc biệt tuần/tháng/năm</button><button data-view="sum">Tổng giải đặc biệt</button>
+<button data-view="book">Sổ kết quả 30 ngày</button>
+</section>
+<section id="out" class="box" aria-live="polite">Đang tải…</section>
+<p class="note">Thống kê dựa trên dữ liệu kết quả đã lưu trong hệ thống. Nếu thiếu ngày/đài, kết quả có thể không đầy đủ. Không có công cụ nào bảo đảm dự đoán số trúng.</p>
+<div class="footer">© 2026 xosothantaiapi.info</div></main>
+<script src="./common.js"></script>
+<script>
+'use strict';
+const API='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';
+const KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+let rows=[],view='freq',loadedRegion='';
+const $r=id=>document.getElementById(id);
+const uniq=a=>[...new Set(a)];
+const day=(d=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+const shift=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const h=(s)=>esc(s);
+const valid=(n)=>/^\d{2,6}$/.test(n);
+const numbers=(row,prize=null)=>Object.entries(row.prizes||{}).filter(([k])=>!prize||k===prize).flatMap(([,a])=>a).filter(valid).map(x=>String(x));
+function table(headers,body){return `<div class="scroll"><table><thead><tr>${headers.map(x=>'<th>'+h(x)+'</th>').join('')}</tr></thead><tbody>${body.map(a=>'<tr>'+a.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`}
+function data(){const p=$r('province').value;return rows.filter(r=>!p||r.province===p)}
+function dateMap(a){const m=new Map();for(const r of a){if(!m.has(r.date))m.set(r.date,[]);m.get(r.date).push(r)}return [...m.entries()].sort((a,b)=>b[0].localeCompare(a[0]))}
+async function load(){
+ const reg=$r('region').value,days=Number($r('days').value),end=day(),start=shift(end,-days+1);
+ $r('status').textContent='Đang tải dữ liệu từ '+start+' đến '+end+'…';
+ $r('reload').disabled=true;
+ try{
+ const u=new URL(API);u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+reg);
+ u.searchParams.set('draw_date','gte.'+start);u.searchParams.set('draw_date','lte.'+end);u.searchParams.set('order','draw_date.desc');u.searchParams.set('limit','10000');
+ const res=await fetch(u,{headers:{apikey:KEY,Accept:'application/json'},cache:'no-store'});
+ if(!res.ok)throw new Error('HTTP '+res.status);
+ let temp=[];for(const x of await res.json())temp.push(...extractDraws(x.data,reg,x.draw_date));
+ const unique=new Map();for(const r of temp)unique.set(r.date+'|'+r.province+'|'+JSON.stringify(r.prizes),r);
+ rows=[...unique.values()];loadedRegion=reg;
+ const old=$r('province').value,provinces=uniq(rows.map(x=>x.province)).sort((a,b)=>a.localeCompare(b,'vi'));
+ $r('province').innerHTML='<option value="">Toàn miền</option>'+provinces.map(x=>`<option value="${h(x)}">${h(x)}</option>`).join('');
+ if(provinces.includes(old))$r('province').value=old;
+ $r('status').textContent='Đã nhận '+rows.length+' bảng đài trong '+uniq(rows.map(x=>x.date)).length+' ngày có dữ liệu.';
+ render();
+ }catch(e){rows=[];$r('status').textContent='Không tải được dữ liệu: '+e.message;$r('out').innerHTML='<div class="empty">Lỗi kết nối. Hãy kiểm tra cấu hình Supabase và thử lại. Không hiển thị số giả.</div>'}
+ finally{$r('reload').disabled=false}
+}
+function render(){
+ const a=data();if(!a.length){$r('out').innerHTML='<div class="empty">Chưa có dữ liệu phù hợp với miền/đài và khoảng thời gian đã chọn.</div>';return;}
+ const dates=dateMap(a),by2=new Map(Array.from({length:100},(_,i)=>[String(i).padStart(2,'0'),0]));
+ for(const r of a)for(const n of numbers(r))by2.set(n.slice(-2),(by2.get(n.slice(-2))||0)+1);
+ const ranking=[...by2].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+ let html='';
+ if(view==='freq'){html='<h2>Tần suất hai chữ số cuối</h2>'+table(['Số','Số lần'],ranking.map(x=>[h(x[0]),String(x[1])]));}
+ else if(view==='gan'){
+ const active=dates.map(([date,v])=>new Set(v.flatMap(r=>numbers(r).map(n=>n.slice(-2)))));
+ const gaps=[...by2.keys()].map(n=>{let i=0;while(i<active.length&&!active[i].has(n))i++;return [n,i===active.length?'≥ '+i:i+'',active.length===i?'Chưa xuất hiện trong dữ liệu':''];}).sort((x,y)=>parseInt(y[1])-parseInt(x[1]));
+ html='<h2>Lô tô gan (số ngày có dữ liệu không xuất hiện)</h2>'+table(['Số','Số ngày','Ghi chú'],gaps.map(x=>x.map(h)));
+ }else if(view==='pairs'){
+ const pairs=[];for(let i=0;i<50;i++){let n=String(i).padStart(2,'0'),rev=n[1]+n[0];pairs.push([n+' – '+rev,String((by2.get(n)||0)+(n===rev?0:by2.get(rev)||0))]);}
+ html='<h2>Tần suất cặp đảo</h2>'+table(['Cặp','Số lần'],pairs.sort((a,b)=>Number(b[1])-Number(a[1])).map(x=>x.map(h)));
+ }else if(view==='special'||view==='first'){
+ const k=view==='special'?'db':'g1',list=a.flatMap(r=>numbers(r,k).map(n=>[fmt(r.date),r.province,n]));
+ html='<h2>'+ (k==='db'?'Giải đặc biệt':'Giải nhất')+'</h2>'+table(['Ngày','Đài','Số'],list.map(x=>x.map(h)));
+ }else if(view==='head'){
+ const heads=Array.from({length:10},()=>0),tails=Array.from({length:10},()=>0);
+ for(const [n,c] of by2){heads[Number(n[0])]+=c;tails[Number(n[1])]+=c}
+ html='<h2>Thống kê đầu – đuôi</h2>'+table(['Số','Đầu','Đuôi'],heads.map((x,i)=>[String(i),String(x),String(tails[i])]));
+ }else if(view==='weekly'){
+ const data=a.flatMap(r=>numbers(r,'db').map(n=>({date:r.date,n,province:r.province})));
+ const keyMonth=x=>x.date.slice(0,7),keyYear=x=>x.date.slice(0,4),keyWeek=x=>{const d=new Date(x.date+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)};
+ const make=(name,fn)=>{let m=new Map();for(const x of data){const k=fn(x);if(!m.has(k))m.set(k,[]);m.get(k).push(x)}return `<h2 class="sep">${name}</h2>`+table(['Kỳ','Số giải đặc biệt'],[...m].sort((a,b)=>b[0].localeCompare(a[0])).map(([k,v])=>[h(k),v.map(x=>h(x.n)).join(', ')]))};
+ html=make('Theo tuần (tuần bắt đầu Thứ 2)',keyWeek)+make('Theo tháng',keyMonth)+make('Theo năm',keyYear);
+ }else if(view==='sum'){
+ const result=a.flatMap(r=>numbers(r,'db').map(n=>[fmt(r.date),r.province,n,(Number(n.slice(-2)[0])+Number(n.slice(-2)[1]))%10]));
+ html='<h2>Tổng hai chữ số cuối giải đặc biệt (hàng đơn vị)</h2>'+table(['Ngày','Đài','ĐB','Tổng'],result.map(x=>x.map(h)));
+ }else if(view==='book'){
+ html='<h2>Sổ kết quả trong khoảng thời gian chọn</h2>';
+ for(const [dt,group] of dates){html+=`<div class="datehead">${h(fmt(dt))}</div>`;
+ const keys=$r('region').value==='MB'?['db','g1','g2','g3','g4','g5','g6','g7']:['g8','g7','g6','g5','g4','g3','g2','g1','db'];
+ html+=table(['Giải',...group.map(r=>r.province)],keys.map(k=>[h(k==='db'?'ĐB':k.toUpperCase()),...group.map(r=>'<span class="nums '+(k==='db'?'danger':'')+'">'+(r.prizes[k]||[]).map(h).join(' · ')+'</span>')]));
+ }
+ }
+ $r('out').innerHTML=html;
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));render()});
+$r('region').onchange=load;$r('days').onchange=load;$r('province').onchange=render;$r('reload').onclick=load;load();
+</script></body></html>
