@@ -1,0 +1,99 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Thống kê 2 số, 3 số, 4 số | XOSOAPI</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#202020;background:#f5f5f5}*{box-sizing:border-box}body{margin:0}.wrap{max-width:980px;margin:auto;background:#fff;min-height:100vh}.header{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#fff;border-bottom:1px solid #ddd}.header a{color:#c62828;text-decoration:none;font-weight:750}.brand{font-size:20px;font-weight:900;color:#ce3030}.nav{background:#d32f2f;color:white;padding:12px 16px;font-weight:800}.intro{padding:15px;background:#fff5d4}.intro h1{font-size:21px;margin:0 0 6px}.intro p{margin:0;font-size:13px;color:#555}.filters{padding:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;border-bottom:1px solid #ddd}.filters label{font-size:12px;font-weight:700;display:block;margin-bottom:5px}.filters select{width:100%;border:1px solid #bbb;background:white;border-radius:5px;padding:10px 5px;font-size:15px}.actions{padding:0 14px 14px}.actions button{background:#d32f2f;border:0;color:white;border-radius:6px;padding:12px 18px;font-weight:800;width:100%}.actions button:disabled{opacity:.55}.status{margin:10px 14px;padding:12px;border:1px solid #ddd;background:#fafafa;border-radius:5px;font-size:13px;line-height:1.6}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px}.card{border:1px solid #ddd;padding:11px 6px;text-align:center}.card b{display:block;font-size:22px;color:#c62828}.card small{font-size:11px;color:#555}.section{padding:8px 14px 18px}.section h2{font-size:17px;margin:8px 0 10px;border-left:4px solid #d32f2f;padding-left:8px}.tablewrap{overflow:auto}.stats{width:100%;border-collapse:collapse;text-align:center}.stats th,.stats td{border:1px solid #ddd;padding:9px 5px;font-size:13px}.stats th{background:#eee}.stats tbody tr:nth-child(even){background:#fafafa}.num{font-weight:850;color:#c62828;font-size:17px;font-variant-numeric:tabular-nums}.note{font-size:12px;color:#666;line-height:1.6}.empty{padding:24px;text-align:center;color:#777}.footer{padding:20px 14px;color:#777;background:#f5f5f5;font-size:12px}@media(max-width:440px){.brand{font-size:17px}.filters{gap:6px;padding:10px}.filters select{font-size:13px}.stats th,.stats td{padding:8px 3px;font-size:12px}}
+</style></head><body><div class="wrap"><header class="header"><a href="./index.html">← Trang chủ</a><div class="brand">XOSOAPI</div><a href="./so-ket-qua-30-ngay.html">Sổ 30 ngày</a></header>
+<div class="nav">THỐNG KÊ KẾT QUẢ XỔ SỐ</div><div class="intro"><h1>Thống kê 2 số · 3 số · 4 số</h1><p>Thống kê theo kết quả đã lưu trong Supabase. Không dự đoán số trúng.</p></div>
+<div class="filters"><div><label for="region">Miền</label><select id="region"><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc</option></select></div>
+<div><label for="digits">Loại số</label><select id="digits"><option value="2">2 số</option><option value="3">3 số</option><option value="4">4 số</option></select></div>
+<div><label for="period">Thời gian</label><select id="period"><option value="30">30 ngày</option><option value="90">90 ngày</option><option value="365">365 ngày</option></select></div></div>
+<div class="actions"><button id="run">Xem thống kê</button></div><div class="status" id="status" role="status">Chọn miền, loại số và thời gian rồi bấm “Xem thống kê”.</div>
+<div class="cards"><div class="card"><b id="days">—</b><small>Ngày có dữ liệu đủ giải</small></div><div class="card"><b id="draws">—</b><small>Bảng đài hợp lệ</small></div><div class="card"><b id="total">—</b><small>Lượt số được đếm</small></div></div>
+<div class="section"><h2>20 số xuất hiện nhiều nhất</h2><div class="tablewrap" id="top"><div class="empty">Chưa có thống kê</div></div></div>
+<div class="section"><h2>20 số lâu chưa xuất hiện nhất</h2><div class="tablewrap" id="gap"><div class="empty">Chưa có thống kê</div></div><p class="note">“Gan” tính theo số ngày lịch từ lần xuất hiện cuối tới ngày cuối của khoảng chọn, không tính ngày thiếu dữ liệu là ngày không xuất hiện. Số chưa từng xuất hiện trong khoảng không được xếp vào bảng gan.</p></div>
+<div class="section"><h2>Ngày không đủ dữ liệu</h2><div id="missing" class="note">—</div><p class="note">Chỉ đếm một bảng đài khi đủ số lượng giải theo cơ cấu. Các ngày thiếu hoặc bảng đài chưa đủ giải không được tính vào thống kê. Một số xuất hiện nhiều lần trong cùng ngày được tính theo số lượt.</p></div>
+<footer class="footer">© 2026 XOSOAPI · Thống kê dựa trên dữ liệu lịch sử, không bảo đảm kết quả tương lai.</footer></div>
+<script>
+const prizeKeys={db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2};
+function extractDraws(value,region,date){
+ const out=[];
+ function walk(v,province,depth){
+  if(depth>12||v==null)return;
+  if(typeof v==='string'&&/^[\[{]/.test(v.trim())){try{return walk(JSON.parse(v),province,depth+1)}catch(e){return}}
+  if(Array.isArray(v)){v.forEach(x=>walk(x,province,depth+1));return}
+  if(typeof v!=='object')return;
+  const prov=String(v.province||v.station||v.tinh||v.name||province||(region==='MB'?'Miền Bắc':'Không rõ đài'));
+  if(v.prizes&&typeof v.prizes==='object'){
+   const prizes={};for(let [k,val] of Object.entries(v.prizes)){
+    let canonical=k.toLowerCase().replace(/[^a-z0-9]/g,'');if(canonical==='special'||canonical==='dacbiet')canonical='db';
+    if(!Object.hasOwn(prizeKeys,canonical))continue;
+    const raw=Array.isArray(val)?val:[val];
+    const nums=raw.map(x=>typeof x==='number'||typeof x==='string'?String(x).trim():'').filter(x=>/^\d+$/.test(x)&&x.length===(region==='MB'?({db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}[canonical]||0):prizeKeys[canonical]));
+    if(nums.length)prizes[canonical]=nums;
+   }
+   if(Object.keys(prizes).length){
+    const sources=[v,v.metadata,v.meta,v.info].filter(x=>x&&typeof x==='object');
+    let dbCodes=[];
+    for(const source of sources){
+      for(const key of ['ma_db','maDB','maDb','ma_dac_biet','maDacBiet','special_codes','specialCodes','db_codes','dbCodes']){
+        const value=source[key];
+        if(value!=null){const parts=Array.isArray(value)?value:String(value).split(/[,;|\s]+/);dbCodes=parts.map(x=>String(x).trim()).filter(x=>/^[0-9]{1,2}[A-Za-zÀ-ỹ]{1,4}$/.test(x));if(dbCodes.length)break;}
+      }
+      if(dbCodes.length)break;
+    }
+    out.push({region,date,province:prov,prizes,dbCodes});
+   }
+  }
+  for(const [k,child] of Object.entries(v))if(!['prizes','province','station','tinh','name'].includes(k)&&child&&typeof child==='object')walk(child,prov,depth+1);
+ }
+ walk(value,'',0);return out;
+}
+
+
+const PUBLIC_KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+const API='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';
+const $=id=>document.getElementById(id);
+const EXPECTED={MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4},MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1}};
+function vnToday(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function dayShift(s,n){const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+function valid(draw,r){return Object.entries(EXPECTED[r]).every(([k,count])=>(draw.prizes[k]||[]).length===count)}
+function daysBetween(a,b){return Math.round((new Date(b+'T12:00:00Z')-new Date(a+'T12:00:00Z'))/86400000)}
+async function fetchRange(r,from,to){
+ const u=new URL(API);u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+r);u.searchParams.set('draw_date','gte.'+from);u.searchParams.set('draw_date','lte.'+to);u.searchParams.set('order','draw_date.asc');u.searchParams.set('limit','1000');
+ const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),25000);
+ try{const res=await fetch(u,{headers:{apikey:PUBLIC_KEY,Accept:'application/json'},signal:ctl.signal,cache:'no-store'});if(!res.ok)throw Error('Supabase HTTP '+res.status);return await res.json()}finally{clearTimeout(timer)}
+}
+function table(items,kind){
+ if(!items.length)return '<div class="empty">Không có dữ liệu phù hợp</div>';
+ const h=kind==='top'?'<th>Số</th><th>Số lượt</th><th>Ngày có mặt</th><th>Lần cuối</th>':'<th>Số</th><th>Ngày chưa ra</th><th>Lần cuối</th><th>Số lượt</th>';
+ return '<table class="stats"><thead><tr><th>STT</th>'+h+'</tr></thead><tbody>'+items.map((x,i)=>'<tr><td>'+(i+1)+'</td><td class="num">'+x.num+'</td>'+(kind==='top'?'<td>'+x.count+'</td><td>'+x.days+'</td><td>'+x.last+'</td>':'<td>'+x.gap+'</td><td>'+x.last+'</td><td>'+x.count+'</td>')+'</tr>').join('')+'</tbody></table>'
+}
+let busy=false;
+async function run(){
+ if(busy)return;busy=true;$('run').disabled=true;
+ const r=$('region').value,digits=Number($('digits').value),period=Number($('period').value),to=dayShift(vnToday(),-1),from=dayShift(to,-period+1);
+ $('status').textContent='Đang tải dữ liệu '+r+' từ '+from+' đến '+to+'…';
+ try{
+   let raw=[];for(let i=0;i<period;i+=45){const a=dayShift(from,i),b=dayShift(from,Math.min(period-1,i+44));raw.push(...await fetchRange(r,a,b));$('status').textContent='Đã tải '+Math.min(i+45,period)+'/'+period+' ngày…'}
+   const records=new Map(),validDays=new Set(),badDays=new Set(),seen=new Set();let validDraws=0;
+   for(const row of raw){const date=row.draw_date;const draws=extractDraws(row.data,r,date);if(!draws.length){badDays.add(date);continue}
+     for(const draw of draws){const id=date+'|'+draw.province+'|'+JSON.stringify(draw.prizes);if(seen.has(id))continue;seen.add(id);
+       if(!valid(draw,r)){badDays.add(date);continue}
+       validDays.add(date);validDraws++;
+       for(const n of Object.values(draw.prizes).flat()){const num=String(n).slice(-digits);if(num.length!==digits)continue;let stat=records.get(num);if(!stat){stat={num,count:0,dates:new Set(),last:date};records.set(num,stat)}stat.count++;stat.dates.add(date);if(date>stat.last)stat.last=date}
+     }
+   }
+   const list=[...records.values()].map(x=>({...x,days:x.dates.size,gap:daysBetween(x.last,to)}));
+   const top=[...list].sort((a,b)=>b.count-a.count||b.days-a.days||a.num.localeCompare(b.num)).slice(0,20);
+   const gap=[...list].sort((a,b)=>b.gap-a.gap||b.count-a.count||a.num.localeCompare(b.num)).slice(0,20);
+   const missing=[];for(let i=0;i<period;i++){const day=dayShift(from,i);if(!validDays.has(day))missing.push(day)}
+   $('top').innerHTML=table(top,'top');$('gap').innerHTML=table(gap,'gap');
+   $('days').textContent=validDays.size;$('draws').textContent=validDraws;
+   $('total').textContent=list.reduce((s,x)=>s+x.count,0).toLocaleString('vi-VN');
+   $('missing').textContent=missing.length?missing.length+' ngày không có bảng hợp lệ: '+missing.join(', '):'Không có ngày thiếu bảng hợp lệ.';
+   $('status').textContent='Đã thống kê '+r+' · '+digits+' số · '+from+' đến '+to+'. Chỉ tính bảng đài đủ giải. Những ngày có dữ liệu thiếu ở một số đài cần kiểm tra riêng.';
+ }catch(e){$('status').textContent='Lỗi tải thống kê: '+e.message+'. Kiểm tra kết nối và quyền đọc Supabase.'}
+ finally{busy=false;$('run').disabled=false}
+}
+$('run').addEventListener('click',run);run();
+</script></body></html>
