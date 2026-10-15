@@ -1,0 +1,9 @@
+GÓI BỔ SUNG ADSENSE XOSOAPI
+
+Đưa 9 tệp trong thư mục này lên THƯ MỤC GỐC repository GitHub Pages (cùng vị trí index.html).
+Giữ nguyên các tệp website khác (không xóa).
+Các tệp: index.html, thong-tin.css, gioi-thieu.html, chinh-sach-bao-mat.html, dieu-khoan-su-dung.html, lien-he.html, robots.txt, sitemap.xml, ads.txt.
+
+QUAN TRỌNG: Trang Liên hệ hiện dùng Telegram @mrkbis_hotro_bot. Xác nhận bot này thực sự hỗ trợ website, nếu không thì đổi sang kênh liên hệ chính thức.
+Rà soát thực tế chức năng diễn đàn, thống kê và các trang con về nội dung, liên kết hỏng, chính sách nội dung cá cược.
+Không có bảo đảm được Google AdSense phê duyệt.
