@@ -1,0 +1,130 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>12 phương pháp thống kê xổ số 3 miền | XOSOAPI</title>
+<meta name="description" content="Khám phá 12 phương pháp thống kê và phân tích lịch sử kết quả xổ số miền Nam, miền Trung, miền Bắc. Dữ liệu chỉ mang tính tham khảo, không bảo đảm dự đoán chính xác.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://xosothantaiapi.info/soi-cau.html">
+<link rel="stylesheet" href="./style-extra.css"><style>.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px}.methods button{background:#112941;border:1px solid #2c4a69;text-align:left;padding:14px;font-weight:650}.methods button.active{background:#4b341b;border-color:#ba7b25}.methods small{display:block;margin-top:4px}.pill{display:inline-block;border:1px solid #35516c;border-radius:99px;padding:6px 10px;margin:3px;color:#cfe3f6}.warn{color:#ffd28c}.resultbox{padding:12px;border:1px solid #31516d;border-radius:12px;background:#0a1a2e;margin:10px 0}.num{font-size:22px;font-weight:900;letter-spacing:2px;color:#79e9d1}.muted{line-height:1.5}
+/* Giao diện sáng đỏ trắng trên iPhone */
+:root{color-scheme:light}html,body{background:#f5f6fa!important;color:#202938!important}body{margin:0}main{max-width:1100px;margin:auto;padding:12px}header,.panel{background:#fff!important;color:#202938!important;border:1px solid #e2e6ed!important;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px #1725540a}header{border-top:5px solid #bd122a!important}h1,h2,h3{color:#202938!important}a{color:#b9132b!important}small,.muted,.note{color:#617084!important}label{display:block;color:#283345!important;font-weight:650;margin-bottom:6px}.flex{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.flex>div{min-width:0}.flex>div select{width:100%}input,select{background:#fff!important;color:#1d2939!important;border:1px solid #cbd5e1!important;border-radius:11px;padding:12px;max-width:100%;font-size:16px;box-sizing:border-box}button,#load{background:#bb1630!important;color:#fff!important;border:1px solid #bb1630!important;border-radius:12px;padding:12px 15px;cursor:pointer}.methods{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.methods button{background:#fff!important;color:#263244!important;border:1px solid #d9e0e9!important}.methods button.active{background:#b9152e!important;color:#fff!important;border-color:#b9152e!important}.methods small{color:inherit}.resultbox{background:#fff5f6!important;border:1px solid #f1cbd2!important;color:#263244!important}.pill{background:#fff!important;color:#a6122b!important;border:1px solid #e7bdc6!important}.num{color:#ba1630!important}.warn{color:#b51d33!important}.metric{background:#f4f6fa!important;color:#293447!important;border-radius:12px;padding:12px}.metric b{color:#b9152e!important}#status{overflow-wrap:anywhere}details{color:#374151}summary{color:#b9152e}.copy-dan{display:inline-flex;align-items:center;gap:5px;margin:8px 0 0;padding:8px 12px!important;font-size:14px!important}.dan-numbers{line-height:2;overflow-wrap:anywhere}@media(max-width:420px){main{padding:9px}header,.panel{padding:14px}.methods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}.mode-tabs button{background:#f3f4f6!important;color:#a41427!important;border:1px solid #d7dbe2!important;padding:14px 8px;font-weight:800;border-radius:12px}.mode-tabs button.selected{background:#bd142b!important;color:white!important;border-color:#bd142b!important}.methods button.active{background:#bd142b!important;color:white!important;border-color:#bd142b!important}#statsArea[hidden],#soiArea[hidden]{display:none!important}.stats-table{width:100%;border-collapse:collapse;font-size:13px}.stats-table td,.stats-table th{padding:9px 5px;border-bottom:1px solid #e4e7ed;text-align:left}.stats-table th{background:#f5f6f9}.stats-scroll{overflow-x:auto}.stat-copy{background:#bd142b!important;color:#fff!important;border:0;border-radius:8px;padding:8px 12px;margin:8px 0}
+</style><style>
+.panel{padding:14px!important;margin-bottom:10px!important}header{padding:13px!important}h1{font-size:23px!important}h2{font-size:20px!important;margin:4px 0 12px!important}
+.compact-info{margin:0 0 10px;background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:10px 14px;font-size:14px}.compact-info b{color:#bb1630}.subnote{color:#667085;font-size:12px}
+#load[hidden]{display:none!important}.methods{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}.methods button{font-size:13px!important;padding:10px!important;min-height:46px!important}
+.stats-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #dce2ea;border-radius:10px;margin-top:10px}.stats-table{min-width:490px;font-size:13px!important}.stats-table th{background:#fff0f1!important;color:#a9132c!important;white-space:nowrap;position:sticky;top:0}.stats-table td,.stats-table th{border:1px solid #e3e6ec!important;padding:10px 8px!important;text-align:center!important}.stats-table td:first-child{font-weight:800;color:#b9132b}.stats-table tbody tr:nth-child(even){background:#fafbfc}
+.gan-tools{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.gan-tools label{display:inline-flex;align-items:center;gap:3px;border:1px solid #e1e4eb;border-radius:8px;padding:7px;font-size:13px;margin:0;font-weight:500}.gan-tools input{accent-color:#b9132b}
+#statsResult{overflow-wrap:anywhere}.mode-tabs{position:sticky;top:0;z-index:5;background:#fff;padding:5px 0}
+@media(max-width:420px){main{padding:8px!important}.flex{gap:9px!important}.panel{padding:12px!important}.flex select{font-size:14px!important;padding:10px 6px!important}}
+</style></head><body><main>
+<header><a href="./dashboard.html">← Dashboard</a><h1>🎯 Phương pháp soi cầu</h1><small>12 phương pháp · thống kê 2 số · đối chiếu lịch sử, không cam kết dự đoán</small></header>
+<section class="panel"><h2>Bộ lọc dữ liệu</h2><div class="flex"><div><label>Miền</label><select id="region"><option value="MB">Miền Bắc</option><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option></select></div><div><label>Đài</label><select id="province"><option value="">Toàn miền</option></select></div><div><label>Thứ</label><select id="weekday"><option value="">Tất cả các thứ</option><option value="1">Thứ Hai</option><option value="2">Thứ Ba</option><option value="3">Thứ Tư</option><option value="4">Thứ Năm</option><option value="5">Thứ Sáu</option><option value="6">Thứ Bảy</option><option value="0">Chủ nhật</option></select></div><div><label>Thời gian</label><select id="days"><option value="7">7 ngày</option><option value="30">30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option><option value="180">180 ngày</option><option value="365" selected>365 ngày</option></select></div></div><details><summary style="margin:12px 0;cursor:pointer">Cài đặt kết nối (khi cần)</summary><label>Supabase URL</label><input id="base" value="https://zigpqddlhvjbjrwhfhaa.supabase.co"><label>Publishable / anon key</label><input id="apiKey" type="text" value="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni" autocomplete="off" readonly><small>Khóa publishable công khai, tự điền. Không dùng service_role.</small></details><p id="status" aria-live="polite">Đang chuẩn bị dữ liệu tự động…</p><button id="load" type="button" hidden>↻ Tải lại dữ liệu</button></section>
+<div class="compact-info">Có dữ liệu: <b id="daysCount">–</b> ngày <span id="drawCount" hidden></span><span id="stationCount" hidden></span> <span class="subnote">· Chỉ thống kê kỳ đã có kết quả</span></div>
+<section class="panel"><div class="mode-tabs"><button id="tabSoi" type="button" class="selected">🎯 SOI CẦU</button><button id="tabStats" type="button">📊 THỐNG KÊ</button></div><div id="soiArea"><h2>Phương pháp soi cầu</h2><div id="methods" class="methods"></div><h2 id="methodTitle" style="margin-top:22px">Bạch thủ lô</h2><div id="result">Bấm Tải dữ liệu để bắt đầu.</div></div><div id="statsArea" hidden><h2>Thống kê xổ số</h2><div id="statsMethods" class="methods"></div><h3 id="statsTitle"></h3><div id="statsResult">Bấm Tải dữ liệu để bắt đầu.</div></div></section>
+</main><script src="./common.js"></script><script>
+'use strict';
+const names=['🎯 Bạch Thủ Lô','👥 Song Thủ Lô','🔗 Lô Xiên 2','🔗 Lô Xiên 3','⭐ Đề Đặc Biệt','🎯 Dàn Đề 10–36 Số','🔁 Cầu 2 Nháy','🔥 Cầu 3 Nháy','🔺 Cầu Tam Giác Pascal','⛔ Loại Bạch Thủ','📈 Cầu Đang Chạy','🧠 AI Dự Đoán'];
+let history=[],active=0,loaded=false;
+const fmtN=n=>String(n).padStart(2,'0');
+const rank=(vals)=>{let c=Array(100).fill(0);vals.forEach(v=>{let n=Number(v);if(/^\d{2}$/.test(String(v))&&n>=0&&n<100)c[n]++});return c.map((count,n)=>({s:fmtN(n),count})).sort((a,b)=>b.count-a.count||a.s.localeCompare(b.s))};
+const hits=(r)=>twoDigits(r);
+const draws=()=>getSelected(history,$('region').value,$('province').value).filter(r=>r.date>=minusDays(localDay(),Number($('days').value)-1)).filter(r=>!$('weekday').value||new Date(r.date+'T12:00:00').getDay()===Number($('weekday').value));
+const htmlList=(a,limit=15)=>'<div>'+a.slice(0,limit).map(x=>'<span class="pill"><b>'+esc(x.s)+'</b> · '+x.count+' lần</span>').join('')+'</div>';
+const box=(title,content)=>'<div class="resultbox"><b>'+title+'</b><div style="margin-top:9px">'+content+'</div></div>';
+function render(){
+  $('methodTitle').textContent=names[active].replace(/^[^ ]+ /,'');
+  [...$('methods').children].forEach((b,i)=>b.classList.toggle('active',i===active));
+  if(!loaded){$('result').textContent='Đang tải dữ liệu…';return}
+  const ds=draws(),vals=ds.flatMap(hits),ranks=rank(vals),n=vals.length;
+  const days=[...new Set(ds.map(x=>x.date))].sort();const recent=days.slice(-7);const recentRows=ds.filter(x=>recent.includes(x.date));
+  const recentRanks=rank(recentRows.flatMap(hits));const special=ds.flatMap(x=>(x.prizes.db||[]).map(v=>({s:v.slice(-2),date:x.date,province:x.province})));
+  $('daysCount').textContent=days.length;$('drawCount').textContent=n;$('stationCount').textContent=new Set(ds.map(x=>x.province)).size;
+  if(!n){$('result').innerHTML='<p class="warn">Không có kết quả trong khoảng đã chọn. Thử đổi miền/đài hoặc ngày.</p>';return}
+  let out='';const note='<p class="note">Đây là mô tả tần suất lịch sử, không có cơ sở khẳng định kỳ sau sẽ lặp lại.</p>';
+  if(active===0){out=box('Số xuất hiện nhiều nhất',htmlList(ranks,1))+box('Top 10',htmlList(ranks,10))+note}
+  if(active===1){out=box('Hai số có tần suất cao nhất',htmlList(ranks,2))+note}
+  if(active===2||active===3){let k=active===2?2:3;let combos=[];let a=ranks.slice(0,10);function walk(prefix,start){if(prefix.length===k){let s=prefix.map(x=>x.s).join(' – ');let shared=days.filter(d=>{let seen=new Set(ds.filter(x=>x.date===d).flatMap(hits));return prefix.every(x=>seen.has(x.s))}).length;combos.push({s,count:shared});return}for(let i=start;i<a.length;i++)walk([...prefix,a[i]],i+1)}walk([],0);combos.sort((a,b)=>b.count-a.count);out=box('Nhóm cùng xuất hiện trong một ngày (không tính dự đoán)',htmlList(combos,10))+note}
+  if(active===4){out=box('Hai số cuối giải đặc biệt',htmlList(rank(special.map(x=>x.s)),12))+box('Giải đặc biệt gần nhất',special.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12).map(x=>'<div>'+esc(fmt(x.date))+' · '+esc(x.province)+' · <b>'+esc(x.s)+'</b></div>').join(''))+note}
+  if(active===5){let top=ranks.slice(0,36);const dan=(k)=>{let nums=top.slice(0,k).map(x=>x.s);return box('Dàn '+k+' số (theo tần suất)','<div class="dan-numbers">'+nums.map(x=>'<span class="pill"><b>'+esc(x)+'</b></span>').join('')+'</div><button type="button" class="copy-dan" data-copy="'+nums.join(' ')+'">📋 Sao chép dàn '+k+' số</button>')};out=dan(10)+dan(20)+dan(36)+note}
+  if(active===6||active===7){let min=active===6?2:3;let all=[];for(let d of days){let c=rank(ds.filter(x=>x.date===d).flatMap(hits));for(let x of c)if(x.count>=min)all.push(x.s)}out=box('Số xuất hiện ít nhất '+min+' lần trong cùng ngày',htmlList(rank(all).filter(x=>x.count>0),15))+note}
+  if(active===8){let s=special.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,2);if(s.length<2)out='<p class="warn">Cần tối thiểu 2 kỳ đặc biệt.</p>';else{let digits=(s[0].s+s[1].s).split('').map(Number);let rows=[digits];while(rows.at(-1).length>1){let prev=rows.at(-1),next=[];for(let i=0;i<prev.length-1;i++)next.push((prev[i]+prev[i+1])%10);rows.push(next)}out=box('Tam giác Pascal (minh họa phép cộng modulo 10)',rows.map(x=>'<div class="num">'+x.join(' ')+'</div>').join(''))+'<p class="note">Cách dựng này mang tính minh họa toán học; không có bằng chứng giúp dự đoán xổ số.</p>'}}
+  if(active===9){let lowest=[...ranks].sort((a,b)=>a.count-b.count||a.s.localeCompare(b.s));out=box('Các số ít xuất hiện nhất',htmlList(lowest,15))+note}
+  if(active===10){let streak=[];for(let s=0;s<100;s++){let key=fmtN(s),run=0;for(let i=days.length-1;i>=0;i--){let found=ds.some(x=>x.date===days[i]&&hits(x).includes(key));if(!found)break;run++}if(run)streak.push({s:key,count:run})}streak.sort((a,b)=>b.count-a.count);out=box('Số xuất hiện liên tiếp qua các ngày có kết quả gần nhất',htmlList(streak,15))+note}
+  if(active===11){let earlier=ds.filter(x=>!recent.includes(x.date)).flatMap(hits),train=rank(earlier),test=recentRows.flatMap(hits),set=new Set(test);let top=train.slice(0,10);let found=top.filter(x=>set.has(x.s));out=box('Kiểm chứng đơn giản: Top 10 giai đoạn trước',htmlList(top,10))+box('Số có xuất hiện trong 7 ngày có dữ liệu gần nhất',found.length+'/10 số · '+found.map(x=>x.s).join(', '))+'<p class="note">Chỉ là kiểm tra ngoài mẫu sơ bộ, không phải mô hình AI được huấn luyện hay dự đoán đáng tin cậy. Chưa có đủ dữ liệu để xác nhận hiệu quả.</p>'}
+  $('result').innerHTML=out;
+}
+function refreshProvinces(){let reg=$('region').value,old=$('province').value,arr=[...new Set(history.filter(x=>x.region===reg).map(x=>x.province).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'vi'));$('province').innerHTML='<option value="">Tất cả các đài</option>'+arr.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('');if(arr.includes(old))$('province').value=old}
+$('methods').innerHTML=names.map((n,i)=>'<button type="button" data-i="'+i+'">'+n+'</button>').join('');$('methods').addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;active=Number(b.dataset.i);render()});
+$('region').addEventListener('change',()=>{refreshProvinces();render()});
+$('province').addEventListener('change',render);
+$('weekday').addEventListener('change',render);
+let loadSequence=0;
+async function autoLoad(){
+ const seq=++loadSequence, b=$('load');
+ b.disabled=true; loaded=false;
+ $('status').textContent='Đang tải dữ liệu '+$('days').value+' ngày…';
+ try{
+   const rows=await fetchHistory(Number($('days').value));
+   if(seq!==loadSequence)return;
+   history=rows;loaded=true;refreshProvinces();
+   $('status').textContent='Đã tải '+history.length+' bản ghi · '+$('days').value+' ngày. Chọn miền, đài hoặc thứ để xem ngay.';
+   render();renderStats();
+ }catch(e){if(seq!==loadSequence)return;loaded=false;$('status').textContent='Không tải được dữ liệu: '+e.message+' · Bấm Tải lại dữ liệu.';b.hidden=false;render();renderStats()}
+ finally{if(seq===loadSequence)b.disabled=false}
+}
+$('days').addEventListener('change',autoLoad);
+$('load').addEventListener('click',autoLoad);
+// Read only public key already stored by other pages, never use service_role.
+// Khóa publishable này được công khai trong frontend; không dùng khóa quản trị.
+$('apiKey').value='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+try{sessionStorage.setItem('lottery_public_key',$('apiKey').value)}catch(e){}
+$('result').addEventListener('click',async e=>{const b=e.target.closest('.copy-dan');if(!b)return;const value=b.dataset.copy;try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value)}else{const t=document.createElement('textarea');t.value=value;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('Không thể sao chép');t.remove()}const old=b.textContent;b.textContent='✓ Đã sao chép';setTimeout(()=>b.textContent=old,1800)}catch(err){alert('Không sao chép được, hãy giữ để chọn số.')}});
+
+// Thống kê độc lập, dùng cùng dữ liệu đã lọc miền/đài/thứ/ngày.
+const statNames=['Thống kê lô tô gan','Thống kê tần suất loto','Thống kê tần suất cặp loto','Thống kê giải đặc biệt','Thống kê đầu đuôi loto','Bảng đặc biệt tuần','Bảng đặc biệt tháng','Bảng đặc biệt năm','Thống kê GĐB theo tổng','Thống kê giải nhất','Thống kê GĐB theo thứ'];
+let statActive=0;
+const statEsc=x=>esc(String(x));
+function statsTable(headers,rows){return '<div class="stats-scroll"><table class="stats-table"><thead><tr>'+headers.map(x=>'<th>'+statEsc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(x=>'<td>'+statEsc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
+function prizeEntries(ds,key){return ds.flatMap(r=>(r.prizes[key]||[]).map(n=>({date:r.date,province:r.province,n:String(n),two:String(n).slice(-2)}))).filter(x=>/^\d{2}$/.test(x.two))}
+function renderStats(){
+ $('statsTitle').textContent=statNames[statActive];
+ [...$('statsMethods').children].forEach((b,i)=>b.classList.toggle('active',i===statActive));
+ if(!loaded){$('statsResult').textContent='Đang tải dữ liệu…';return}
+ const ds=draws().slice().sort((a,b)=>a.date.localeCompare(b.date)), all=ds.flatMap(hits), counts=rank(all), dates=[...new Set(ds.map(r=>r.date))].sort(), db=prizeEntries(ds,'db'), g1=prizeEntries(ds,'g1');
+ if(!ds.length){$('statsResult').textContent='Không có dữ liệu cho bộ lọc đã chọn.';return}
+ const dateSeen=new Map();ds.forEach(r=>{if(!dateSeen.has(r.date))dateSeen.set(r.date,[]);dateSeen.get(r.date).push(...hits(r))});
+ const present=s=>dates.filter(d=>dateSeen.get(d).includes(s));
+ let out='';
+ if(statActive===0){
+   const mode=document.querySelector('input[name="ganFilter"]:checked')?.value||'all';
+   const rows=counts.map(x=>{
+     const a=present(x.s), seen=new Set(a), current=dates.length-(a.length?dates.indexOf(a.at(-1))+1:0);
+     let gap=0,maxGap=0;
+     for(const d of dates){if(seen.has(d)){maxGap=Math.max(maxGap,gap);gap=0}else gap++}
+     maxGap=Math.max(maxGap,gap);
+     return [x.s,current,a.length,a.length?fmt(a.at(-1)):'Chưa xuất hiện',maxGap];
+   }).filter(row=>mode==='all'||(mode==='even'&&Number(row[0])%2===0)||(mode==='odd'&&Number(row[0])%2===1)||(mode==='double'&&row[0][0]===row[0][1])).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+   out='<div class="gan-tools"><b>Lọc bộ số:</b> '+[['all','Tất cả'],['even','Chẵn'],['odd','Lẻ'],['double','Kép']].map(([v,t])=>'<label><input type="radio" name="ganFilter" value="'+v+'" '+(mode===v?'checked':'')+'> '+t+'</label>').join('')+'</div>'+statsTable(['Bộ số','Số kỳ gan','Số kỳ xuất hiện','Ngày ra gần nhất','Gan cực đại'],rows);
+   out+='<p class="note">Gan tính theo các ngày có kết quả của bộ lọc hiện tại. Khi chọn tất cả các đài, một số được xem là xuất hiện nếu có ở ít nhất một đài trong ngày.</p>';
+ }
+ if(statActive===1){out=statsTable(['Số','Số lượt','Ngày xuất hiện','% ngày có số'],counts.map(x=>[x.s,x.count,present(x.s).length,dates.length?(100*present(x.s).length/dates.length).toFixed(1)+'%':'—']))}
+ if(statActive===2){const rows=[];for(let i=0;i<100;i++)for(let j=i+1;j<100;j++){let a=fmtN(i),b=fmtN(j),cnt=dates.filter(d=>{let seen=dateSeen.get(d);return seen.includes(a)&&seen.includes(b)}).length;if(cnt)rows.push([a+' – '+b,cnt])}rows.sort((a,b)=>b[1]-a[1]);out=statsTable(['Cặp loto','Ngày cùng xuất hiện'],rows.slice(0,100))}
+ if(statActive===3){out=statsTable(['Ngày','Đài','Giải đặc biệt','2 số cuối'],db.slice().reverse().map(x=>[fmt(x.date),x.province,x.n,x.two]))}
+ if(statActive===4){const heads=Array.from({length:10},(_,i)=>({head:i,nums:counts.filter(x=>x.s[0]===String(i)),tail:counts.filter(x=>x.s[1]===String(i))}));out=statsTable(['Đầu/Đuôi','Số lượt đầu','Số lượt đuôi'],heads.map(x=>[x.head,x.nums.reduce((n,y)=>n+y.count,0),x.tail.reduce((n,y)=>n+y.count,0)]))}
+ if([5,6,7].includes(statActive)){const groups=new Map();for(const x of db){const d=new Date(x.date+'T12:00:00');let k=statActive===5?(()=>{let start=new Date(d);start.setDate(d.getDate()-((d.getDay()+6)%7));return start.toISOString().slice(0,10)})():statActive===6?x.date.slice(0,7):x.date.slice(0,4);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(x)}out=[...groups].sort((a,b)=>b[0].localeCompare(a[0])).map(([k,v])=>box(k,statsTable(['Ngày','Đài','Đặc biệt'],v.slice().reverse().map(x=>[fmt(x.date),x.province,x.n])))).join('')}
+ if(statActive===8){const totals=Array(10).fill(0);db.forEach(x=>{totals[x.n.split('').reduce((a,b)=>a+Number(b),0)%10]++});out=statsTable(['Tổng','Số lần'],totals.map((n,i)=>[i,n]))}
+ if(statActive===9){out=statsTable(['Ngày','Đài','Giải nhất'],g1.slice().reverse().map(x=>[fmt(x.date),x.province,x.n]))}
+ if(statActive===10){const rows=Array.from({length:7},(_,i)=>{let sub=db.filter(x=>new Date(x.date+'T12:00:00').getDay()===i);let r=rank(sub.map(x=>x.two));return [['CN','T2','T3','T4','T5','T6','T7'][i],sub.length,r.slice(0,5).map(x=>x.s+' ('+x.count+')').join(', ')]});out=statsTable(['Thứ','Số giải ĐB','Top 5 hai số cuối'],rows)}
+ $('statsResult').innerHTML=out+'<p class="note">Chỉ thống kê trên các kỳ có dữ liệu đã tải, không phải xác suất dự đoán trúng.</p>';
+}
+$('statsResult').addEventListener('change',e=>{if(e.target.name==='ganFilter')renderStats()});
+$('statsMethods').innerHTML=statNames.map((n,i)=>'<button type="button" data-i="'+i+'">'+n+'</button>').join('');
+$('statsMethods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;statActive=Number(b.dataset.i);renderStats()});
+function switchMode(mode){const stat=mode==='stats';$('statsArea').hidden=!stat;$('soiArea').hidden=stat;$('tabStats').classList.toggle('selected',stat);$('tabSoi').classList.toggle('selected',!stat);if(stat)renderStats()}
+$('tabSoi').addEventListener('click',()=>switchMode('soi'));
+$('tabStats').addEventListener('click',()=>switchMode('stats'));
+['region','province','weekday','days'].forEach(id=>$(id).addEventListener('change',()=>{if(!$('statsArea').hidden)renderStats()}));
+window.addEventListener('load',()=>{refreshProvinces();autoLoad()});
+
+render();
+</script></body></html>
