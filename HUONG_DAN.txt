@@ -1,9 +1,8 @@
-GÓI BỔ SUNG ADSENSE XOSOAPI
-
-Đưa 9 tệp trong thư mục này lên THƯ MỤC GỐC repository GitHub Pages (cùng vị trí index.html).
-Giữ nguyên các tệp website khác (không xóa).
-Các tệp: index.html, thong-tin.css, gioi-thieu.html, chinh-sach-bao-mat.html, dieu-khoan-su-dung.html, lien-he.html, robots.txt, sitemap.xml, ads.txt.
-
-QUAN TRỌNG: Trang Liên hệ hiện dùng Telegram @mrkbis_hotro_bot. Xác nhận bot này thực sự hỗ trợ website, nếu không thì đổi sang kênh liên hệ chính thức.
-Rà soát thực tế chức năng diễn đàn, thống kê và các trang con về nội dung, liên kết hỏng, chính sách nội dung cá cược.
-Không có bảo đảm được Google AdSense phê duyệt.
+1. Sao lưu các file HTML cũ trên GitHub trước khi thay thế.
+2. Supabase > SQL Editor: chạy SUPABASE_SETUP.sql.
+3. Supabase > Authentication: bật Email/Password, cấu hình URL trang web và email xác nhận.
+4. Tải 5 file HTML lên GitHub root: index.html, thong-ke-2-so.html, thong-ke-3-so.html, thong-ke-4-so.html, thanh-vien.html. KHÔNG tải SQL lên GitHub.
+5. Đăng ký tài khoản, kích hoạt thử 7 ngày; kiểm tra trạng thái bằng Supabase SQL.
+6. Sau khi xác minh khách thanh toán, quản trị viên chạy câu lệnh gia hạn mẫu trong SQL, thay email.
+CẢNH BÁO: Đây là cổng khóa giao diện, CHƯA phải paywall an toàn: dữ liệu lottery_results đang công khai và mã JavaScript của trang vẫn có thể được truy cập. Để bảo vệ dữ liệu phân tích trả phí, cần chuyển xử lý/đọc dữ liệu sang Edge Function xác thực JWT và kiểm tra hạn trên máy chủ, sau đó khóa các đường đọc trả phí công khai. Không áp dụng RLS chặn lottery_results nếu trang kết quả xổ số công khai còn dùng bảng này.
+Một người có thể tạo nhiều email để thử lại; cần xác thực danh tính/chống lạm dụng nếu muốn ngăn tuyệt đối.
