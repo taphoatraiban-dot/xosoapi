@@ -6,8 +6,7 @@
 // CẤU HÌNH: Điền đường dẫn API TRUNG GIAN của chính bạn ở đây.
 // API trung gian phải giữ API key ở máy chủ, không trả key cho trình duyệt.
 // Ví dụ: '/api/live-results' nếu website có backend tương ứng.
-const LIVE_ENDPOINT = '';
-const POLL_MS = 5000;
+const LIVE_ENDPOINT = 'https://zigpqddlhvjbjrwhfhaa.supabase.co/functions/v1/xoso-live-public';const POLL_MS = 5000;
 const PRIZES = {MN:[['g8','Giải tám'],['g7','Giải bảy'],['g6','Giải sáu'],['g5','Giải năm'],['g4','Giải tư'],['g3','Giải ba'],['g2','Giải nhì'],['g1','Giải nhất'],['db','Đặc biệt']],MT:[['g8','Giải tám'],['g7','Giải bảy'],['g6','Giải sáu'],['g5','Giải năm'],['g4','Giải tư'],['g3','Giải ba'],['g2','Giải nhì'],['g1','Giải nhất'],['db','Đặc biệt']],MB:[['g7','Giải bảy'],['g6','Giải sáu'],['g5','Giải năm'],['g4','Giải tư'],['g3','Giải ba'],['g2','Giải nhì'],['g1','Giải nhất'],['db','Đặc biệt']]};
 let region='MN';let latest=null;let fetching=false;
 const $=id=>document.getElementById(id);
