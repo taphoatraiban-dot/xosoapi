@@ -1,0 +1,516 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Soi 4 số – tra cứu đến 365 ngày | XOSOAPI</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#182433;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}main{max-width:950px;margin:auto;padding:16px}header{background:#ba1729;color:white;padding:18px;border-radius:14px}h1{font-size:22px;margin:0 0 6px}h2{font-size:18px;margin:8px 0 14px}.panel{background:white;border:1px solid #e2e7ed;border-radius:14px;padding:16px;margin:14px 0}label{display:block;font-size:13px;font-weight:650;margin:8px 0 5px}input,select,button{font:inherit;border-radius:9px;padding:11px;border:1px solid #cdd4df;max-width:100%}input{width:100%}button{background:#ba1729;color:white;border:0;font-weight:650;cursor:pointer}button.secondary{background:#e8ecf3;color:#192333}.flex{display:flex;gap:10px;flex-wrap:wrap}.flex>*{flex:1;min-width:145px}small,.muted{color:#617086}header small{color:#ffe0e4}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{padding:12px;background:#f5f7fa;border-radius:10px;text-align:center}.stat strong{display:block;font-size:21px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid #e7ebf0;padding:9px 6px;text-align:left}th{background:#f7f8fa}td:first-child{font-weight:700;font-variant-numeric:tabular-nums}.scroll{overflow-x:auto}.error{color:#b21b2c}.note{background:#fff7e9;border-radius:9px;padding:10px;color:#6e4e1b}#status{margin-top:10px;white-space:pre-wrap}@media(max-width:540px){main{padding:10px}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:8px}.stat strong{font-size:17px}}main > section.panel{display:none}main > section#exactLookupPanel{display:block}main > p.muted{display:none}#exactLookupPanel{margin-top:14px}#exactRows td{vertical-align:top}#exactNum{font-size:20px}</style></head><body><style id="memberGateStyle">body:not(.member-allowed)>:not(#memberGate){visibility:hidden!important}#memberGate{position:fixed;z-index:2147483647;inset:0;background:#f5f6f9;visibility:visible!important;overflow:auto;font:16px system-ui;color:#1f2937}#memberGate *{box-sizing:border-box}#memberGate .mgcard{max-width:470px;margin:7vh auto;padding:25px;border:1px solid #ddd;border-radius:16px;background:white;box-shadow:0 10px 30px #0001}#memberGate h2{color:#b91c1c}#memberGate input,#memberGate button{display:block;width:100%;padding:12px;margin:10px 0;border-radius:9px;border:1px solid #bbb;font:inherit}#memberGate button{background:#b91c1c;color:white;border:0;cursor:pointer}#memberGate small{color:#666}#memberGate a{color:#b91c1c}</style>
+<div id="memberGate"><div class="mgcard"><h2>👑 Thành viên Ông Thần Tài</h2><p>Thống kê 2 · 3 · 4 số: dùng thử 7 ngày, sau đó <b>49.000đ / 30 ngày</b>.</p><p id="mgstatus">Đang kiểm tra quyền truy cập…</p><form id="mgform" hidden><input id="mgemail" type="email" placeholder="Email" autocomplete="email" required><input id="mgpassword" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)" autocomplete="current-password" required minlength="6"><button type="submit">Đăng nhập</button><button type="button" id="mgregister">Đăng ký tài khoản</button></form><button id="mgtrial" hidden>Kích hoạt dùng thử 7 ngày</button><button id="mglogout" hidden>Đăng xuất</button><p><a href="./thanh-vien.html">Đăng ký / Mua gói thành viên</a> · <a href="./index.html">Về trang chủ</a></p><small>Mỗi tài khoản được dùng thử một lần. Nếu tài khoản hết hạn, vui lòng liên hệ hỗ trợ để gia hạn.</small></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(async()=>{const u='https://zigpqddlhvjbjrwhfhaa.supabase.co',k='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';const $=id=>document.getElementById(id), status=s=>$('mgstatus').textContent=s;
+if(!window.supabase){status('Không tải được thư viện đăng nhập. Kiểm tra kết nối mạng.');return}
+const sb=window.supabase.createClient(u,k,{auth:{persistSession:true,autoRefreshToken:true}});window.memberSupabase=sb;
+async function check(){const {data:{user},error}=await sb.auth.getUser();if(error||!user){$('mgform').hidden=false;$('mgtrial').hidden=true;$('mglogout').hidden=true;status('Đăng nhập hoặc đăng ký để dùng thử.');return}
+$('mgform').hidden=true;$('mglogout').hidden=false;
+const r=await sb.rpc('member_access_status');if(r.error){status('Chưa cấu hình quyền thành viên trên Supabase: '+r.error.message);$('mgtrial').hidden=true;return}
+const x=r.data||{};if(x.allowed){document.body.classList.add('member-allowed');$('memberGate').remove();$('memberGateStyle').remove();return}
+if(x.can_trial){$('mgtrial').hidden=false;status('Tài khoản chưa kích hoạt. Bấm dùng thử miễn phí 7 ngày.')}else{$('mgtrial').hidden=true;status('Thời hạn sử dụng đã hết. Vui lòng gia hạn 49.000đ/30 ngày.')}
+}
+$('mgform').onsubmit=async e=>{e.preventDefault();status('Đang đăng nhập…');const r=await sb.auth.signInWithPassword({email:$('mgemail').value,password:$('mgpassword').value});if(r.error)status(r.error.message);else await check()};
+$('mgregister').onclick=async()=>{status('Đang tạo tài khoản…');const r=await sb.auth.signUp({email:$('mgemail').value,password:$('mgpassword').value});if(r.error)status(r.error.message);else{status('Đăng ký thành công. Nếu Supabase yêu cầu xác nhận email, hãy mở email xác nhận rồi đăng nhập.');if(r.data.session)await check()}};
+$('mgtrial').onclick=async()=>{status('Đang kích hoạt dùng thử…');const r=await sb.rpc('member_start_trial');if(r.error)status('Không thể kích hoạt: '+r.error.message);else await check()};
+$('mglogout').onclick=async()=>{await sb.auth.signOut();await check()};await check();
+})();
+</script><main><header><h1>🔎 Thống kê vòng đảo 4 số</h1><small>MN · MT · MB | MN/MT: loại G8, G7, ĐB · HN: loại ĐB, G6, G7</small></header><section class="panel" id="connectionPanel" style="display:none"><h2>Kết nối dữ liệu</h2><label>Supabase URL</label><input id="base" value="https://zigpqddlhvjbjrwhfhaa.supabase.co" autocomplete="off"><label>Publishable / anon key (không nhập service_role hoặc master key)</label><input id="key" type="password" value="sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni" placeholder="sb_publishable_… hoặc anon key"><div class="flex" style="margin-top:12px"><button id="load" type="button" >Tải dữ liệu & phân tích</button><button class="secondary" id="show">Hiện/ẩn khóa</button></div><div id="status" class="muted" role="status" aria-live="polite">Chưa tải dữ liệu.</div><p class="muted" style="font-size:12px">Bản sửa 10/10 v10 · Mã khởi động độc lập. Khi bấm nút sẽ hiện tiến trình hoặc lỗi cụ thể.</p></section><section class="panel"><div class="flex"><div><label>Miền muốn theo dõi</label><select id="target"><option value="MN">Miền Nam (MN)</option><option value="MT">Miền Trung (MT)</option><option value="MB">Miền Bắc (HN)</option></select></div><div><label>Nguồn so sánh</label><select id="source"><option value="MB">Miền Bắc (HN)</option><option value="MT">Miền Trung (MT)</option><option value="MN">Miền Nam (MN)</option></select></div><div><label>Ngày dự kiến</label><input id="date" type="date" value="2026-10-11"></div></div><div class="flex" style="margin-top:14px"><button id="modeSingle" type="button" class="secondary">So sánh 1 miền</button><button id="modeCombined" type="button">Dự đoán tổng hợp 3 miền</button></div><p id="modeInfo" class="muted" style="font-size:13px">Chế độ tổng hợp: lấy hai miền còn lại làm nguồn; số có ở cả hai nguồn được xếp trước.</p><div class="flex" style="margin-top:12px"><div><label>Khoảng hiển thị thống kê</label><select id="windowDays"><option value="60" selected>60 ngày (mặc định)</option><option value="180">180 ngày</option><option value="365">365 ngày</option></select></div><div><label>Phạm vi dữ liệu tải</label><div class="note" id="historyInfo">Tải dữ liệu 60 ngày gần nhất (có đệm 5 ngày).</div></div></div><div class="stats" style="margin-top:15px"><div class="stat"><strong id="nsource">–</strong><small>Số ở miền nguồn</small></div><div class="stat"><strong id="candidates">–</strong><small>Số chưa ra ở đích</small></div><div class="stat"><strong id="days">–</strong><small>Ngày dữ liệu</small></div></div></section><section class="panel"><h2>Top 10 số 3 chữ số để theo dõi</h2><p class="note">Đây là danh sách theo giả thuyết “đã ra miền nguồn, chưa ra miền đích”, <b>không phải xác suất trúng</b>. Xổ số độc lập; số chưa ra không có nghĩa là sắp ra.</p><div class="scroll"><table><thead><tr><th>Hạng</th><th>Số</th><th>Lần ra nguồn</th><th>Nguồn ra gần nhất</th><th>Đích ra gần nhất</th><th>Ngày vắng ở đích</th></tr></thead><tbody id="rows"><tr><td colspan="6" class="muted">Tải dữ liệu để xem danh sách.</td></tr></tbody></table></div><div class="flex" style="margin-top:14px"><button id="copy" class="secondary">Sao chép Top 10</button><button id="save" class="secondary">Lưu dự đoán vào máy</button></div></section><section class="panel" id="fourPanel"><h2>Thống kê 4 số · 60 ngày</h2><p class="note">MN/MT loại G8, G7, ĐB; HN loại ĐB, G6, G7. Với các giải còn lại có ít nhất 4 chữ số: lấy đúng 4 số cuối, giữ số 0 đầu. So sánh 3 cách: theo ngày, cùng thứ, và theo tuần. Chọn cách có tỷ lệ kiểm chứng lịch sử cao nhất, không coi là xác suất trúng kỳ sau.</p><div class="flex"><div><label>Miền thống kê</label><select id="fourRegion"><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc</option></select></div><div><label>Cách thống kê</label><select id="fourMode"><option value="auto">Tự chọn cách kiểm chứng tốt nhất</option><option value="day">Theo ngày (7 ngày gần)</option><option value="weekday">Theo thứ (cùng thứ trong 8 tuần)</option><option value="week">Theo tuần (28 ngày gần)</option></select></div><div><label>Ngày cần xem</label><input id="fourDate" type="date"></div></div><p id="fourStatus" class="muted">Chưa tải dữ liệu.</p><div class="scroll"><table><thead><tr><th>Phương pháp</th><th>Ngày kiểm chứng</th><th>Trúng Top 10</th><th>Tỷ lệ quan sát</th></tr></thead><tbody id="fourTests"><tr><td colspan="4">Chưa có dữ liệu.</td></tr></tbody></table></div><h2 style="margin-top:16px">Top 10 số 4 chữ số</h2><div class="scroll"><table><thead><tr><th>Số</th><th>Lượt ra trong 60 ngày</th><th>Ngày gần nhất</th><th>Ngày chưa ra</th><th>Điểm theo cách chọn</th></tr></thead><tbody id="fourRows"><tr><td colspan="5">Chưa có dữ liệu.</td></tr></tbody></table></div><div class="panel" id="fourLookup" style="border:1px solid #d5dce7;background:#fbfcff;margin-top:18px">
+<h2>🔎 Soi số gốc 4 chữ số · 60 ngày</h2>
+<p class="muted">Nhập số gốc để xem tất cả số đảo khác nhau, số nào chưa xuất hiện và số đã ra bao nhiêu lần, vào những ngày nào. Dùng miền và ngày ở phía trên.</p>
+<div class="flex"><div><label>Số gốc (4 chữ số)</label><input id="fourSeed" type="text" inputmode="numeric" maxlength="4" placeholder="Ví dụ: 2223" value="2223"></div><div style="align-self:end"><button type="button" id="fourLookupBtn">Soi số</button></div></div>
+<p id="fourLookupStatus" class="muted" role="status" style="margin-top:12px">Tải dữ liệu để soi.</p>
+<div class="stats" style="margin:12px 0"><div class="stat"><strong id="fourTotalPerm">–</strong><small>Số đảo khác nhau</small></div><div class="stat"><strong id="fourNotSeen">–</strong><small>Chưa thấy xuất hiện</small></div><div class="stat"><strong id="fourSeen">–</strong><small>Đã xuất hiện</small></div></div>
+<div class="scroll"><table><thead><tr><th>Số đảo</th><th>Trạng thái</th><th>Số lần ra</th><th>Ngày xuất hiện (số lượt)</th></tr></thead><tbody id="fourLookupRows"><tr><td colspan="4">Chưa có dữ liệu.</td></tr></tbody></table></div>
+<h2 style="margin-top:18px">📈 Kiểm chứng số đảo và tăng/giảm</h2>
+<p class="muted">Sau mỗi ngày số gốc xuất hiện, kiểm tra 7 ngày tiếp theo. So sánh số đảo, thay đổi đúng 1 chữ số ±1, và thay đổi rồi đảo. Không dùng kết quả cùng ngày để tránh nhầm thứ tự. Chỉ tính ngày đã có dữ liệu.</p>
+<div class="scroll"><table><thead><tr><th>Kiểu</th><th>Số trong nhóm</th><th>Lượt gốc đủ kiểm tra</th><th>Lượt có số ra</th><th>Tỷ lệ quan sát</th></tr></thead><tbody id="fourPatternRows"><tr><td colspan="5">Tải dữ liệu để kiểm chứng.</td></tr></tbody></table></div>
+<p id="fourPatternSummary" class="muted">Chưa có dữ liệu kiểm chứng.</p>
+<p class="muted" style="font-size:12px;margin-top:10px">“Chưa ra” nghĩa là không tìm thấy trong dữ liệu 60 ngày đã tải, không có nghĩa là chưa từng ra. Một số có thể ra nhiều lần trong một ngày. Nếu thiếu dữ liệu ngày, kết quả không đầy đủ.</p>
+</div><button type="button" class="secondary" id="fourCopy" style="margin-top:12px">Sao chép Top 10 số 4 chữ số</button><p class="muted" style="font-size:12px">Kiểm chứng theo từng ngày có dữ liệu, chỉ dùng các ngày trước ngày kiểm chứng để xếp hạng. Nếu thiếu ngày hoặc mẫu quá ít, tỷ lệ có thể không đáng tin cậy. Các kỳ quay độc lập, không có phương pháp nào bảo đảm trúng.</p></section><section class="panel" id="watchPanel"><h2>Theo dõi số chờ đảo miền – Cách B</h2><p class="note">Số đã xuất hiện ở miền nguồn sẽ được theo dõi từ ngày xuất hiện đó, <b>kể cả từng ra ở miền đích trước đó</b>. Chỉ chuyển sang “Đã xuất hiện” khi miền đích ra lại số này <b>sau ngày nguồn</b>. Nếu nguồn ra lại trong lúc chờ, giữ ngày bắt đầu cũ và cập nhật lần nguồn ra gần nhất. Chỉ tính trong khoảng dữ liệu đã tải (tối đa 365 ngày).</p><div class="flex"><div><label>Miền nguồn</label><select id="watchSource"><option value="MB">Miền Bắc (HN)</option><option value="MN">Miền Nam (MN)</option><option value="MT">Miền Trung (MT)</option></select></div><div><label>Miền đích</label><select id="watchTarget"><option value="MN">Miền Nam (MN)</option><option value="MB">Miền Bắc (HN)</option><option value="MT">Miền Trung (MT)</option></select></div><div><label>Tìm số 3 chữ số</label><input id="watchNumber" inputmode="numeric" maxlength="3" placeholder="Ví dụ: 890"></div></div><p id="watchStatus" class="muted" role="status">Chưa tải dữ liệu.</p><h2>Đang chờ miền đích ra lại</h2><div class="scroll"><table><thead><tr><th>Số</th><th>Nguồn bắt đầu</th><th>Nguồn gần nhất</th><th>Đã chờ</th></tr></thead><tbody id="watchWaiting"><tr><td colspan="4">Chưa có dữ liệu.</td></tr></tbody></table></div><h2 style="margin-top:20px">Đã xuất hiện ở miền đích</h2><div class="scroll"><table><thead><tr><th>Số</th><th>Nguồn bắt đầu</th><th>Đích ra lại</th><th>Chờ</th></tr></thead><tbody id="watchDone"><tr><td colspan="4">Chưa có dữ liệu.</td></tr></tbody></table></div></section><section class="panel" id="weeklyPanel"><h2>Đảo số theo thứ trong tuần · MN/MT G7, HN G6 & ĐB</h2><p class="note">Lấy 3 số cuối giải G7 ở MN/MT, giải G6 ở HN và giải Đặc biệt của cùng thứ các tuần trước; tạo hoán vị rồi loại riêng những số đã ra ở miền đích kể từ ngày gốc. Với miền có nhiều đài, gộp kết quả của các đài trong ngày. Đây là thống kê lịch sử, không phải xác suất dự đoán.</p><div class="flex"><div><label>Miền xem</label><select id="weeklyRegion"><option value="MN">MN</option><option value="MT">MT</option><option value="MB">HN</option></select></div><div><label>Số tuần nhìn lại</label><select id="weeklyWeeks"><option value="4">4 tuần</option><option value="8" selected>8 tuần</option><option value="9">9 tuần</option><option value="26">26 tuần</option><option value="52">52 tuần</option></select></div><div><label>Thứ cần phân tích</label><select id="weeklyDay"><option value="auto">Theo ngày dự kiến</option><option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="0">Chủ nhật</option></select></div></div><p id="weeklyStatus" class="muted">Chưa phân tích.</p><div class="scroll"><table><thead><tr><th>Số gốc</th><th>Ngày gốc</th><th>Số đảo còn chờ</th><th>Đã ra sau ngày gốc</th></tr></thead><tbody id="weeklyRows"><tr><td colspan="4">Tải dữ liệu để xem.</td></tr></tbody></table></div><h2 style="margin-top:18px">Tỷ lệ quan sát theo thứ (Thứ 2 – Chủ nhật)</h2><p class="muted" style="font-size:12px">Tỷ lệ = số lượt số đảo đã xuất hiện ở miền đích trong 7 ngày sau ngày gốc / số lượt đủ dữ liệu kiểm tra. Không phải xác suất trúng tương lai. Không tính các tuần thiếu đủ 7 ngày theo lịch.</p><div class="scroll"><table><thead><tr><th>Thứ</th><th>Lượt kiểm tra</th><th>Đã xuất hiện</th><th>Tỷ lệ lịch sử</th></tr></thead><tbody id="weekdayRows"><tr><td colspan="4">Chưa có dữ liệu.</td></tr></tbody></table></div></section><section class="panel" id="pickPanel"><h2>1 số nổi bật cho MN · MT · HN</h2><p class="note">Chấm điểm xếp hạng theo tần suất, đảo miền và đảo số cùng thứ. <b>Điểm không phải phần trăm xác suất trúng.</b> Chỉ hiện khi đã tải dữ liệu.</p><div class="stats"><div class="stat"><small>MN</small><strong id="bestMN">—</strong><small id="scoreMN">Chưa phân tích</small></div><div class="stat"><small>MT</small><strong id="bestMT">—</strong><small id="scoreMT">Chưa phân tích</small></div><div class="stat"><small>HN</small><strong id="bestMB">—</strong><small id="scoreMB">Chưa phân tích</small></div></div><p id="pickStatus" class="muted">Chưa tải dữ liệu.</p></section><section class="panel" id="manualPanel"><h2>Số tự chọn để theo dõi</h2><div class="flex"><div><label>Số 3 chữ số</label><input id="manualNum" inputmode="numeric" maxlength="3" placeholder="890 hoặc 123"></div><div><label>Miền muốn theo dõi</label><select id="manualRegion"><option value="MN">MN</option><option value="MT">MT</option><option value="MB">HN</option></select></div><div><label>Ngày bắt đầu</label><input id="manualDate" type="date"></div></div><div class="flex" style="margin-top:10px"><button id="manualAdd" type="button">Thêm số theo dõi</button><button id="manualClear" type="button" class="secondary">Xóa danh sách tự chọn</button></div><p id="manualStatus" class="muted">Lưu trên trình duyệt đang dùng.</p><div class="scroll"><table><thead><tr><th>Số</th><th>Miền</th><th>Từ ngày</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="manualRows"><tr><td colspan="5">Chưa có số tự chọn.</td></tr></tbody></table></div></section><section class="panel"><h2>Kiểm tra dự đoán đã lưu</h2><div id="history" class="muted">Chưa có dự đoán được lưu.</div><button id="check" style="margin-top:12px">Đối chiếu với kết quả đã tải</button></section><p class="muted">Dữ liệu lấy từ bảng lottery_results (region, draw_date, data) của Supabase. Chỉ sử dụng các giải có từ 3 chữ số trở lên. Nếu hệ thống thiếu ngày, bảng sẽ báo rõ và không coi dữ liệu thiếu là “chưa ra”.</p><section class="panel" id="exactLookupPanel"><h2>🔎 Thống kê vòng đảo 4 số</h2><p class="note"><b>Phạm vi giải:</b> MN/MT loại G8, G7 và ĐB; HN loại ĐB, G6 và G7. Chỉ xét các giải còn lại có từ 4 chữ số.</p><p class="muted">Kiểm tra tất cả số đảo khác nhau của số gốc, giữ số 0 đầu. Chọn miền MN, MT hoặc HN. “Tất cả các đài” chỉ tra cứu các đài thuộc miền đang chọn; “Tất cả” ở ô Thứ kiểm tra cả 7 ngày trong tuần.</p><div class="flex"><div><label>Số cần kiểm tra</label><input id="exactNum" inputmode="numeric" maxlength="4" placeholder="Ví dụ: 1234"></div><div><label>Miền</label><select id="exactRegion"><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc (HN)</option></select></div><div><label>Thứ</label><select id="exactWeekday"><option value="ALL">Tất cả</option><option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="0">Chủ nhật</option></select></div><div><label>Đài</label><select id="exactStation"><option value="ALL">Tất cả các đài</option></select></div><div><label>Thời gian</label><select id="exactDays"><option value="7">7 ngày</option><option value="30">30 ngày</option><option value="60">60 ngày</option><option value="90">90 ngày</option><option value="180">180 ngày</option><option value="365" selected>365 ngày</option></select></div></div><button type="button" id="exactGo" style="margin-top:12px">Kiểm tra thống kê</button><p id="exactStatus" class="muted" role="status">Nhập số rồi nhấn Kiểm tra.</p><div class="stats"><div class="stat"><strong id="exactCount">–</strong><small>Số lần xuất hiện</small></div><div class="stat"><strong id="exactDraws">–</strong><small>Ngày có kết quả</small></div><div class="stat"><strong id="exactLast">–</strong><small>Ngày xuất hiện gần nhất</small></div></div><div id="exactPermSummary" class="note" style="margin:12px 0">Vòng đảo sẽ hiện sau khi tra cứu.</div><div class="scroll"><table><thead><tr><th>Số đảo</th><th>Thứ</th><th>Ngày</th><th>Miền</th><th>Đài</th><th>Giải</th><th>Số trúng</th></tr></thead><tbody id="exactRows"><tr><td colspan="7">Chưa tra cứu.</td></tr></tbody></table></div></section><section class="panel" id="top4Panel" style="display:block"><h2>🏆 TOP 4 số · Dữ liệu thật</h2><p class="muted">Phân tích từ Supabase theo miền, thứ, đài và khoảng ngày đang chọn phía trên. Không cần nhập số gốc. Giữ số 0 ở đầu; loại MN/MT: G8, G7, ĐB; MB: ĐB, G6, G7.</p><div class="flex"><div><label>Hiển thị</label><select id="top4Limit"><option value="10">TOP 10</option><option value="20">TOP 20</option><option value="50">TOP 50</option></select></div><div><label>Kiểu xếp hạng</label><select id="top4Mode"><option value="exact">4 số chính xác</option><option value="perm">Nhóm vòng đảo 4 số</option></select></div></div><div class="flex" style="margin-top:12px"><button id="top4Go" type="button">TRA CỨU DỮ LIỆU THẬT + PHÂN TÍCH TOP</button></div><p id="top4Status" class="muted" role="status">Chưa phân tích. Chọn bộ lọc rồi bấm nút trên.</p><div class="stat" style="margin:12px 0;background:#fff0f1"><small>🏆 TOP 1 — SỐ NỔI BẬT NHẤT</small><strong id="top4Best" style="font-size:32px;color:#ba1729">—</strong><small id="top4BestNote">Chờ dữ liệu thực tế</small></div><div class="scroll"><table><thead><tr><th>Hạng</th><th>Số / Nhóm đảo</th><th>Lượt ra</th><th>Kỳ có</th><th>Gần nhất</th><th>Điểm</th></tr></thead><tbody id="top4Rows"><tr><td colspan="6">Chưa có dữ liệu.</td></tr></tbody></table></div><p class="muted" style="font-size:12px">Điểm là thước đo xếp hạng lịch sử, không phải xác suất trúng. Nếu thiếu ngày dữ liệu, bảng sẽ cảnh báo; kết quả quá khứ không bảo đảm kỳ tiếp theo.</p></section><section class="panel" id="priority365"><h2>📊 Tổng hợp ưu tiên 4 số theo từng đài · 365 ngày</h2><p class="muted">Chọn thứ và miền, bấm Phân tích 365 ngày để xem 3 số ưu tiên cho từng đài và tỷ lệ kiểm chứng lịch sử. Tỷ lệ này không phải xác suất trúng tương lai.</p><iframe title="Tổng hợp ưu tiên 4 số 365 ngày" loading="lazy" style="display:block;width:100%;height:1050px;border:1px solid #e2e7ed;border-radius:12px;background:white" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;vi&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;title&gt;Tổng hợp ưu tiên 365 ngày&lt;/title&gt;&lt;style&gt;*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#1d2938;font:15px system-ui,-apple-system,sans-serif}main{max-width:1000px;margin:auto;padding:12px}header{background:#b9162c;color:white;padding:18px;border-radius:12px}h1{font-size:22px;margin:0 0 6px}.panel{background:white;border:1px solid #dce3eb;border-radius:12px;padding:14px;margin:12px 0}.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}label{display:block;font-weight:700;margin:4px 0 6px}select,button{padding:11px;border-radius:8px;font:inherit;max-width:100%}select{width:100%;border:1px solid #cdd4df}button{background:#bd172e;color:white;border:0;font-weight:700;cursor:pointer;margin-top:12px}button:disabled{opacity:.6}.note{background:#fff6e5;color:#674d1e;padding:12px;border-radius:8px;line-height:1.6}.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:10px 8px;border-bottom:1px solid #e5e9ee;text-align:left}th{background:#f3f5f8}.num{font-weight:850;color:#ba1729}.muted{color:#65748a}.stat{font-size:13px}.top{background:#eef7f0;padding:10px;border-radius:7px;margin-top:8px}h2{font-size:18px}.small{font-size:12px}.links a{color:#fff;margin-right:15px}@media(max-width:600px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}main{padding:8px}}.onegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.onecard{background:#f8f9fc;border:1px solid #dce3eb;border-radius:10px;padding:12px;text-align:center}.onecard strong{display:block;font-size:27px;color:#b9162c;margin:5px 0}.onecard small{display:block;color:#66788a}.onecard .rate{font-size:13px;font-weight:700}.onecard .why{font-size:11px;color:#68788a;margin-top:5px}@media(max-width:480px){.onegrid{grid-template-columns:1fr 1fr 1fr}.onecard{padding:8px 3px}.onecard strong{font-size:20px}}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;main&gt;&lt;header&gt;&lt;h1&gt;📊 Tổng hợp ưu tiên theo đài · 365 ngày&lt;/h1&gt;&lt;/header&gt;&lt;section class=&quot;panel&quot;&gt;&lt;div class=&quot;controls&quot;&gt;&lt;div&gt;&lt;label&gt;Loại số (cố định cho trang này)&lt;/label&gt;&lt;select id=&quot;digits&quot; disabled&gt;&lt;option selected value=&quot;4&quot;&gt;4 số&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;&lt;div&gt;&lt;label&gt;Thứ&lt;/label&gt;&lt;select id=&quot;weekday&quot;&gt;&lt;option value=&quot;1&quot;&gt;Thứ 2&lt;/option&gt;&lt;option value=&quot;2&quot;&gt;Thứ 3&lt;/option&gt;&lt;option value=&quot;3&quot;&gt;Thứ 4&lt;/option&gt;&lt;option selected value=&quot;4&quot;&gt;Thứ 5&lt;/option&gt;&lt;option value=&quot;5&quot;&gt;Thứ 6&lt;/option&gt;&lt;option value=&quot;6&quot;&gt;Thứ 7&lt;/option&gt;&lt;option value=&quot;0&quot;&gt;Chủ nhật&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;&lt;div&gt;&lt;label&gt;Miền&lt;/label&gt;&lt;select id=&quot;region&quot;&gt;&lt;option value=&quot;ALL&quot;&gt;Cả 3 miền&lt;/option&gt;&lt;option value=&quot;MN&quot;&gt;Miền Nam&lt;/option&gt;&lt;option value=&quot;MT&quot;&gt;Miền Trung&lt;/option&gt;&lt;option value=&quot;MB&quot;&gt;Miền Bắc&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;&lt;/div&gt;&lt;button id=&quot;go&quot;&gt;Phân tích 365 ngày&lt;/button&gt;&lt;p id=&quot;status&quot; class=&quot;muted&quot; role=&quot;status&quot;&gt;Chưa tải dữ liệu.&lt;/p&gt;&lt;div class=&quot;note small&quot;&gt;Tỷ lệ % là tỷ lệ kiểm chứng lịch sử: trong những kỳ đủ điều kiện, ít nhất 1 trong 3 số được xếp hạng từ dữ liệu trước kỳ quay đã xuất hiện. Không phải xác suất trúng kỳ tiếp theo. Mẫu kiểm chứng ít hoặc thiếu ngày sẽ được cảnh báo.&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;panel&quot; id=&quot;singlePriority&quot;&gt;&lt;h2&gt;🎯 Chốt 1 số ưu tiên nhất cho mỗi miền&lt;/h2&gt;&lt;p class=&quot;muted small&quot;&gt;Chọn một số đứng đầu dựa trên kiểm chứng lịch sử theo từng đài, sau đó tổng hợp theo miền. % là tỷ lệ kiểm chứng Top 1 trong các kỳ đã qua, không phải xác suất trúng tương lai.&lt;/p&gt;&lt;div id=&quot;singleCards&quot; class=&quot;onegrid&quot;&gt;&lt;div class=&quot;onecard&quot;&gt;MN · Chưa phân tích&lt;/div&gt;&lt;div class=&quot;onecard&quot;&gt;MT · Chưa phân tích&lt;/div&gt;&lt;div class=&quot;onecard&quot;&gt;HN · Chưa phân tích&lt;/div&gt;&lt;/div&gt;&lt;div id=&quot;singleDetail&quot; class=&quot;muted small&quot; style=&quot;margin-top:10px&quot;&gt;Bấm Phân tích 365 ngày để tính.&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;panel&quot;&gt;&lt;h2&gt;3 số ưu tiên của từng đài&lt;/h2&gt;&lt;div class=&quot;scroll&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Miền&lt;/th&gt;&lt;th&gt;Đài&lt;/th&gt;&lt;th&gt;3 số ưu tiên&lt;/th&gt;&lt;th&gt;Kiểm chứng Top 3&lt;/th&gt;&lt;th&gt;Số kỳ kiểm chứng&lt;/th&gt;&lt;th&gt;Độ phủ dữ liệu&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody id=&quot;rows&quot;&gt;&lt;tr&gt;&lt;td colspan=&quot;6&quot;&gt;Chưa có dữ liệu.&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;panel&quot;&gt;&lt;h2&gt;Tổng kết ưu tiên&lt;/h2&gt;&lt;div id=&quot;summary&quot; class=&quot;muted&quot;&gt;Chưa phân tích.&lt;/div&gt;&lt;p class=&quot;muted small&quot;&gt;Bảng xếp hạng dựa trên tần suất có trọng số thời gian trong 56 ngày gần nhất, chỉ xét các ngày cùng thứ đã chọn khi kiểm chứng. Không thể suy ra “đài dễ trúng nhất” chỉ từ kết quả lịch sử.&lt;/p&gt;&lt;/section&gt;&lt;/main&gt;&lt;script&gt;
+const $=x=&gt;document.getElementById(x), API=&#x27;https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results&#x27;,KEY=&#x27;sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni&#x27;;
+const clean=x=&gt;String(x||&#x27;&#x27;).normalize(&#x27;NFD&#x27;).replace(/[\u0300-\u036f]/g,&#x27;&#x27;).toLowerCase().replace(/[^a-z0-9]/g,&#x27;&#x27;);
+const safe=x=&gt;String(x??&#x27;&#x27;).replace(/[&amp;&lt;&gt;&quot;&#x27;]/g,c=&gt;({&#x27;&amp;&#x27;:&#x27;&amp;amp;&#x27;,&#x27;&lt;&#x27;:&#x27;&amp;lt;&#x27;,&#x27;&gt;&#x27;:&#x27;&amp;gt;&#x27;,&#x27;&quot;&#x27;:&#x27;&amp;quot;&#x27;,&quot;&#x27;&quot;:&#x27;&amp;#39;&#x27;}[c]));
+const today=()=&gt;new Intl.DateTimeFormat(&#x27;en-CA&#x27;,{timeZone:&#x27;Asia/Ho_Chi_Minh&#x27;,year:&#x27;numeric&#x27;,month:&#x27;2-digit&#x27;,day:&#x27;2-digit&#x27;}).format(new Date());
+const shift=(d,n)=&gt;{let x=new Date(d+&#x27;T12:00:00Z&#x27;);x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
+const weekday=d=&gt;new Date(d+&#x27;T12:00:00Z&#x27;).getUTCDay();
+const gap=(a,b)=&gt;Math.round((new Date(b+&#x27;T12:00:00Z&#x27;)-new Date(a+&#x27;T12:00:00Z&#x27;))/86400000);
+const excluded=(r,k,d)=&gt;d===4?(r===&#x27;MB&#x27;?/^(db|special|dacbiet|g6|g7)$/i:/^(db|special|dacbiet|g7|g8)$/i).test(k):r===&#x27;MB&#x27;? !/^(g6|db|special|dacbiet)$/i.test(k):!/^(g7|db|special|dacbiet)$/i.test(k);
+function extract(node,r,date,province,out,depth=0){if(depth&gt;14||node==null)return;if(typeof node===&#x27;string&#x27;){if(/^[\[{]/.test(node.trim()))try{extract(JSON.parse(node),r,date,province,out,depth+1)}catch(e){}return}if(Array.isArray(node)){node.forEach(x=&gt;extract(x,r,date,province,out,depth+1));return}if(typeof node!==&#x27;object&#x27;)return;province=node.province||node.station||node.tinh||node.name||province||(r===&#x27;MB&#x27;?&#x27;Miền Bắc&#x27;:&#x27;Chưa rõ đài&#x27;);if(node.prizes&amp;&amp;typeof node.prizes===&#x27;object&#x27;){for(const [k,v] of Object.entries(node.prizes)){for(const n of (Array.isArray(v)?v:[v])){const str=String(n??&#x27;&#x27;);if(/^\d+$/.test(str))out.push({date,region:r,province,prize:k,number:str})}}return}for(const v of Object.values(node))if(v&amp;&amp;typeof v===&#x27;object&#x27;)extract(v,r,date,province,out,depth+1)}
+async function getData(from,to,r){const all=[];const regions=r===&#x27;ALL&#x27;?[&#x27;MN&#x27;,&#x27;MT&#x27;,&#x27;MB&#x27;]:[r];for(const region of regions){for(let i=0;i&lt;365;i+=45){let a=shift(from,i),b=shift(from,Math.min(i+44,364));const u=new URL(API);u.searchParams.set(&#x27;select&#x27;,&#x27;region,draw_date,data&#x27;);u.searchParams.set(&#x27;region&#x27;,&#x27;eq.&#x27;+region);u.searchParams.set(&#x27;draw_date&#x27;,&#x27;gte.&#x27;+a);u.searchParams.set(&#x27;draw_date&#x27;,&#x27;lte.&#x27;+b);u.searchParams.set(&#x27;limit&#x27;,&#x27;1000&#x27;);const ctl=new AbortController(),timer=setTimeout(()=&gt;ctl.abort(),25000);try{const res=await fetch(u,{headers:{apikey:KEY,Accept:&#x27;application/json&#x27;},signal:ctl.signal});if(!res.ok)throw Error(&#x27;Supabase HTTP &#x27;+res.status);all.push(...await res.json())}finally{clearTimeout(timer)}$(&#x27;status&#x27;).textContent=&#x27;Đã tải &#x27;+region+&#x27;: &#x27;+Math.min(i+45,365)+&#x27;/365 ngày…&#x27;}}return all}
+function ranking(events,day,days=56){const cnt=new Map();for(const x of events){let age=gap(x.date,day);if(age&lt;=0||age&gt;days)continue;let v=cnt.get(x.num)||0;cnt.set(x.num,v+(age&lt;=14?2:1))}return [...cnt].sort((a,b)=&gt;b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,3).map(x=&gt;x[0])}
+async function run(){const btn=$(&#x27;go&#x27;);btn.disabled=true;try{const digits=+$(&#x27;digits&#x27;).value,day=+$(&#x27;weekday&#x27;).value,region=$(&#x27;region&#x27;).value,to=shift(today(),-1),from=shift(to,-364);$(&#x27;status&#x27;).textContent=&#x27;Đang tải dữ liệu từ &#x27;+from+&#x27; đến &#x27;+to+&#x27;…&#x27;;const raw=await getData(from,to,region);const groups=new Map(),allDates=new Map();for(const row of raw){let events=[];extract(row.data,row.region,row.draw_date,&#x27;&#x27;,events);const dkey=row.region+&#x27;|&#x27;+row.draw_date;allDates.set(dkey,true);for(const e of events){if(excluded(e.region,e.prize,digits)||e.number.length&lt;digits)continue;const name=e.region===&#x27;MB&#x27;?&#x27;Miền Bắc&#x27;:String(e.province);const key=e.region+&#x27;|&#x27;+clean(name);if(!groups.has(key))groups.set(key,{region:e.region,name,dates:new Set(),events:[]});const g=groups.get(key);g.dates.add(e.date);g.events.push({date:e.date,num:e.number.slice(-digits)})}}
+const result=[];for(const g of groups.values()){const dates=[...g.dates].sort();const chosen=dates.filter(d=&gt;weekday(d)===day);if(!chosen.length)continue;const top=ranking(g.events,shift(to,1));let hits=0,trials=0;for(const d of chosen){const history=g.events.filter(e=&gt;e.date&lt;d&amp;&amp;gap(e.date,d)&lt;=56);const previousDates=new Set(history.map(x=&gt;x.date));if(previousDates.size&lt;3)continue;const pick=ranking(history,d);if(pick.length&lt;3)continue;trials++;if(g.events.some(e=&gt;e.date===d&amp;&amp;pick.includes(e.num)))hits++}let oneHits=0,oneTrials=0;for(const d of chosen){const history=g.events.filter(e=&gt;e.date&lt;d&amp;&amp;gap(e.date,d)&lt;=56);if(new Set(history.map(e=&gt;e.date)).size&lt;3)continue;const p1=ranking(history,d)[0];if(!p1)continue;oneTrials++;if(g.events.some(e=&gt;e.date===d&amp;&amp;e.num===p1))oneHits++}const onePct=oneTrials?100*oneHits/oneTrials:null;const pct=trials?100*hits/trials:null;result.push({...g,top,hits,trials,pct,oneHits,oneTrials,onePct,chosen:chosen.length})}
+result.sort((a,b)=&gt;a.region.localeCompare(b.region)||((b.trials&gt;=8?b.pct:-1)-(a.trials&gt;=8?a.pct:-1))||a.name.localeCompare(b.name));$(&#x27;rows&#x27;).innerHTML=result.map(g=&gt;&#x27;&lt;tr&gt;&lt;td&gt;&#x27;+safe(g.region===&#x27;MB&#x27;?&#x27;HN&#x27;:g.region)+&#x27;&lt;/td&gt;&lt;td&gt;&#x27;+safe(g.name)+&#x27;&lt;/td&gt;&lt;td class=&quot;num&quot;&gt;&#x27;+(g.top.map(safe).join(&#x27; · &#x27;)||&#x27;Chưa đủ dữ liệu&#x27;)+&#x27;&lt;/td&gt;&lt;td&gt;&#x27;+(g.pct===null?&#x27;Chưa đủ mẫu&#x27;:g.pct.toFixed(1)+&#x27;% (&#x27;+g.hits+&#x27;/&#x27;+g.trials+&#x27;)&#x27;)+&#x27;&lt;/td&gt;&lt;td&gt;&#x27;+g.trials+(g.trials&lt;8?&#x27; ⚠ ít mẫu&#x27;:&#x27;&#x27;)+&#x27;&lt;/td&gt;&lt;td&gt;&#x27;+g.dates.size+&#x27; ngày&lt;/td&gt;&lt;/tr&gt;&#x27;).join(&#x27;&#x27;)||&#x27;&lt;tr&gt;&lt;td colspan=&quot;6&quot;&gt;Không có dữ liệu đài hợp lệ theo thứ đã chọn.&lt;/td&gt;&lt;/tr&gt;&#x27;;
+const eligible=result.filter(g=&gt;g.trials&gt;=8&amp;&amp;g.top.length===3).sort((a,b)=&gt;b.pct-a.pct||b.trials-a.trials);$(&#x27;summary&#x27;).innerHTML=eligible.length?eligible.slice(0,5).map((g,i)=&gt;&#x27;&lt;div class=&quot;top&quot;&gt;&lt;b&gt;&#x27;+(i+1)+&#x27;. &#x27;+safe(g.name)+&#x27; (&#x27;+g.region+&#x27;)&lt;/b&gt; · &lt;span class=&quot;num&quot;&gt;&#x27;+g.top.map(safe).join(&#x27; – &#x27;)+&#x27;&lt;/span&gt; · kiểm chứng &#x27;+g.pct.toFixed(1)+&#x27;% (&#x27;+g.hits+&#x27;/&#x27;+g.trials+&#x27; kỳ)&lt;/div&gt;&#x27;).join(&#x27;&#x27;):&#x27;Không đủ kỳ kiểm chứng (tối thiểu 8 kỳ/đài) để xếp hạng đáng tin cậy.&#x27;;// Chọn đúng một số cho từng miền từ các đài có ít nhất 8 kỳ kiểm chứng.
+// Mỗi đài có 1 số Top 1 dựa trên 56 ngày gần nhất. Gom số trùng giữa các đài,
+// ưu tiên tỷ lệ kiểm chứng Top 1 có trọng số số kỳ, rồi độ phủ và số đài ủng hộ.
+const cards=[];const detail=[];for(const r of [&#x27;MN&#x27;,&#x27;MT&#x27;,&#x27;MB&#x27;]){
+ const eligibleStations=result.filter(g=&gt;g.region===r&amp;&amp;g.oneTrials&gt;=8&amp;&amp;g.top.length);
+ const candidates=new Map();for(const g of eligibleStations){const num=g.top[0];let v=candidates.get(num);if(!v){v={num,score:0,weight:0,hits:0,trials:0,stations:[]};candidates.set(num,v)}v.score+=g.onePct*g.oneTrials;v.weight+=g.oneTrials;v.hits+=g.oneHits;v.trials+=g.oneTrials;v.stations.push(g.name)}
+ const best=[...candidates.values()].sort((a,b)=&gt;(b.score/b.weight)-(a.score/a.weight)||b.stations.length-a.stations.length||b.trials-a.trials||a.num.localeCompare(b.num))[0];
+ const name=r===&#x27;MB&#x27;?&#x27;HN&#x27;:r;
+ if(best){const pct=best.score/best.weight;cards.push(&#x27;&lt;div class=&quot;onecard&quot;&gt;&lt;b&gt;&#x27;+name+&#x27;&lt;/b&gt;&lt;strong&gt;&#x27;+safe(best.num)+&#x27;&lt;/strong&gt;&lt;span class=&quot;rate&quot;&gt;&#x27;+pct.toFixed(1)+&#x27;% kiểm chứng&lt;/span&gt;&lt;small&gt;&#x27;+best.trials+&#x27; lượt kiểm chứng từ &#x27;+best.stations.length+&#x27; đài&lt;/small&gt;&lt;/div&gt;&#x27;);detail.push(name+&#x27;: &#x27;+safe(best.stations.join(&#x27;, &#x27;))+&#x27; · &#x27;+best.hits+&#x27;/&#x27;+best.trials+&#x27; lượt Top 1 xuất hiện trong kỳ kiểm chứng.&#x27;);}
+ else{cards.push(&#x27;&lt;div class=&quot;onecard&quot;&gt;&lt;b&gt;&#x27;+name+&#x27;&lt;/b&gt;&lt;strong&gt;—&lt;/strong&gt;&lt;small&gt;Chưa đủ cơ sở chốt số&lt;/small&gt;&lt;/div&gt;&#x27;)}
+}
+$(&#x27;singleCards&#x27;).innerHTML=cards.join(&#x27;&#x27;);$(&#x27;singleDetail&#x27;).textContent=detail.length?detail.join(&#x27; | &#x27;)+&#x27; Kết quả kiểm chứng chỉ phản ánh dữ liệu quá khứ.&#x27;:&#x27;Không đủ dữ liệu kiểm chứng cho các miền đã chọn.&#x27;;
+$(&#x27;status&#x27;).textContent=&#x27;Hoàn thành · &#x27;+digits+&#x27; số · &#x27;+from+&#x27; → &#x27;+to+&#x27; · &#x27;+result.length+&#x27; đài có dữ liệu. Các ngày thiếu được bỏ qua.&#x27;;
+}catch(e){$(&#x27;status&#x27;).textContent=&#x27;Lỗi: &#x27;+e.message}finally{btn.disabled=false}}
+$(&#x27;go&#x27;).addEventListener(&#x27;click&#x27;,run);$(&#x27;weekday&#x27;).value=String((new Date(today()+&#x27;T12:00:00Z&#x27;)).getUTCDay());
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;" referrerpolicy="no-referrer"></iframe></section></main><script>
+(function(){
+  'use strict';
+  var el=function(id){return document.getElementById(id);};
+  var regions=['MN','MT','MB'];
+  var records=[], coverage={}, top=[], combined=true;
+  function viewDays(){return Number(el('windowDays').value)||60;}
+  function dateCutoff(days){return addDays(iso(new Date()),-days);}
+  function activeRows(region){var d=dateCutoff(viewDays());return ((coverage[region]&&coverage[region].rows)||[]).filter(function(r){return r.draw_date>=d;});}
+  var regionName=function(r){return r==='MB'?'HN':r;};
+  function status(t,err){el('status').textContent=(err?'LỖI: ':'')+t;el('status').style.color=err?'#b21b2c':'#42536b';}
+  function safeStorageGet(k){try{return sessionStorage.getItem(k)||'';}catch(e){return '';}}
+  function safeStorageSet(k,v){try{sessionStorage.setItem(k,v);}catch(e){}}
+  function safeLocalGet(){try{return JSON.parse(localStorage.getItem('lottery_forecasts')||'[]');}catch(e){return [];}}
+  function safeLocalSet(v){try{localStorage.setItem('lottery_forecasts',JSON.stringify(v));return true;}catch(e){return false;}}
+  function esc(v){return String(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  // v6: dữ liệu Supabase có thể là JSON object, chuỗi JSON, hoặc {api,data:[...]}.
+  function collect(node,out,depth){
+    depth=depth||0;if(depth>18||node===null||node===undefined)return;
+    if(typeof node==='string'){
+      var raw=node.trim();
+      if((raw.charAt(0)==='{'&&raw.slice(-1)==='}')||(raw.charAt(0)==='['&&raw.slice(-1)===']')){
+        try{collect(JSON.parse(raw),out,depth+1);}catch(e){}
+      }
+      return;
+    }
+    if(Array.isArray(node)){node.forEach(function(x){collect(x,out,depth+1);});return;}
+    if(typeof node!=='object')return;
+    if(node.prizes && typeof node.prizes==='object'){
+      Object.keys(node.prizes).forEach(function(k){
+        if(!/^(g7|g6|db|special|dacbiet)$/i.test(k))return;
+        if(/^g6$/i.test(k)&&out._region!=='MB')return;
+        if(/^g7$/i.test(k)&&out._region==='MB')return;
+        var v=node.prizes[k];(Array.isArray(v)?v:[v]).forEach(function(x){
+          if(x!==null&&typeof x==='object'){collect(x,out,depth+1);return;}
+          var str=String(x).trim();if(/^\d{3,}$/.test(str))out.push(str.slice(-3));
+        });
+      });
+    }
+    Object.keys(node).forEach(function(k){if(k!=='prizes')collect(node[k],out,depth+1);});
+  }
+  function parseNums(row){var out=[];out._region=row.region;collect(row.data,out,0);return out;}
+  function recentIndex(region){
+    var dates=Array.from(new Set(activeRows(region).map(function(r){return r.draw_date;}))).sort().reverse();
+    var dateSet={};dates.forEach(function(d){dateSet[d]=true;});
+    var result={};((coverage[region]&&coverage[region].rows)||[]).forEach(function(row){
+      if(!dateSet[row.draw_date])return;
+      row.nums.forEach(function(n){
+        if(!result[n])result[n]={count:0,last:row.draw_date};
+        result[n].count++;if(row.draw_date>result[n].last)result[n].last=row.draw_date;
+      });
+    });return result;
+  }
+  function render(){
+    if(!records.length)return;
+    var tgt=el('target').value, src=el('source').value;
+    var dates=Array.from(new Set(activeRows(tgt).map(function(r){return r.draw_date;}))).sort().reverse();
+    var targetIndex=recentIndex(tgt);
+    var sources=combined?regions.filter(function(r){return r!==tgt;}):[src];
+    var indexes=sources.map(recentIndex);
+    var pool={};
+    sources.forEach(function(r,i){Object.keys(indexes[i]).forEach(function(n){
+      if(!pool[n])pool[n]={num:n,count:0,last:'',seen:0,by:[]};
+      var item=pool[n];item.count+=indexes[i][n].count;item.seen++;
+      if(indexes[i][n].last>item.last)item.last=indexes[i][n].last;
+      item.by.push(regionName(r)+': '+indexes[i][n].count+' lần');
+    });});
+    el('nsource').textContent=Object.keys(pool).length;
+    el('days').textContent=dates.length;
+    if(!combined&&src===tgt){el('rows').innerHTML='<tr><td colspan="6">Chọn hai miền khác nhau.</td></tr>';el('candidates').textContent='–';top=[];return;}
+    var candidates=Object.keys(pool).filter(function(n){return !targetIndex[n];}).map(function(n){
+      var item=pool[n];return {num:n,count:item.count,last:item.last,seen:item.seen,
+        targetLast:'Không thấy trong '+dates.length+' ngày',
+        gap:dates.length?'≥ '+dates.length+' ngày dữ liệu':'Không rõ',by:item.by};
+    });
+    candidates.sort(function(x,y){return (combined?y.seen-x.seen:0)||y.count-x.count||y.last.localeCompare(x.last)||x.num.localeCompare(y.num);});
+    top=candidates.slice(0,10);el('candidates').textContent=candidates.length;
+    el('rows').innerHTML=top.length?top.map(function(x,i){
+      var extra=combined?' <small style="display:block;color:#617086">'+esc(x.by.join(' · '))+'</small>':'';
+      return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.num)+'</b>'+extra+'</td><td>'+x.count+'</td><td>'+esc(x.last)+'</td><td>'+esc(x.targetLast)+'</td><td>'+esc(x.gap)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6">Không có số phù hợp trong dữ liệu đã tải.</td></tr>';
+    el('modeInfo').textContent=combined?'Tổng hợp '+sources.map(regionName).join(' + ')+' → '+regionName(tgt)+'. Ưu tiên số xuất hiện ở cả hai miền nguồn. Đây là xếp hạng tần suất, không phải xác suất trúng.':'So sánh '+regionName(src)+' → '+regionName(tgt)+'.';
+  }
+  // Cách B: lập chu kỳ từ lần xuất hiện ở miền nguồn, chỉ kết thúc khi miền đích ra ở ngày MUỘN HƠN.
+  // Những lần xuất hiện nguồn trong khi chờ không làm mất ngày bắt đầu.
+  function watchEvents(region){
+    var dates=(coverage[region]&&coverage[region].dates)||[];
+    var valid={};dates.forEach(function(d){valid[d]=true;});
+    var grouped={};((coverage[region]&&coverage[region].rows)||[]).forEach(function(row){
+      if(!valid[row.draw_date])return;
+      if(!grouped[row.draw_date])grouped[row.draw_date]={};
+      row.nums.forEach(function(n){grouped[row.draw_date][n]=true;});
+    });return grouped;
+  }
+  function watchDiff(a,b){return Math.max(0,Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000));}
+  function renderWatch(){
+    var source=el('watchSource').value,target=el('watchTarget').value;
+    if(!records.length){el('watchStatus').textContent='Chưa tải dữ liệu. Bấm “Tải dữ liệu & phân tích” trước.';return;}
+    if(source===target){el('watchStatus').textContent='Hãy chọn hai miền khác nhau.';el('watchWaiting').innerHTML='';el('watchDone').innerHTML='';return;}
+    var a=watchEvents(source),b=watchEvents(target),days=Object.keys(a).sort();
+    var allDays=Object.keys(a).concat(Object.keys(b)).sort();
+    var asOf=allDays.length?allDays[allDays.length-1]:'';
+    var state={},finished=[];
+    days.forEach(function(day){
+      Object.keys(a[day]).forEach(function(n){
+        if(!state[n])state[n]={num:n,start:day,last:day};
+        else state[n].last=day;
+      });
+    });
+    // Process chronological source + destination events; destination closes only if date > source start.
+    state={};
+    var timeline=Array.from(new Set(allDays)).sort();
+    timeline.forEach(function(day){
+      // Close older waiting cycles when target number appears after source start.
+      Object.keys(b[day]||{}).forEach(function(n){
+        var item=state[n];if(item&&day>item.start){finished.push({num:n,start:item.start,last:item.last,hit:day});delete state[n];}
+      });
+      Object.keys(a[day]||{}).forEach(function(n){
+        if(!state[n])state[n]={num:n,start:day,last:day};else state[n].last=day;
+      });
+    });
+    var query=el('watchNumber').value.replace(/\D/g,'').slice(0,3);
+    var waiting=Object.keys(state).map(function(n){return state[n];}).filter(function(x){return !query||x.num.indexOf(query)!==-1;});
+    var done=finished.filter(function(x){return !query||x.num.indexOf(query)!==-1;});
+    waiting.sort(function(x,y){return y.start.localeCompare(x.start)||x.num.localeCompare(y.num);});
+    done.sort(function(x,y){return y.hit.localeCompare(x.hit)||x.num.localeCompare(y.num);});
+    el('watchStatus').textContent=regionName(source)+' → '+regionName(target)+' · '+waiting.length+' số đang chờ · '+done.length+' lượt đã xuất hiện lại · Dữ liệu đến '+(asOf||'chưa có')+'. Các số ngoài phạm vi dữ liệu không được xác nhận.';
+    el('watchWaiting').innerHTML=waiting.length?waiting.slice(0,300).map(function(x){return '<tr><td><b>'+esc(x.num)+'</b></td><td>'+esc(x.start)+'</td><td>'+esc(x.last)+'</td><td>'+watchDiff(x.start,asOf)+' ngày</td></tr>';}).join(''):'<tr><td colspan="4">Không có số đang chờ phù hợp.</td></tr>';
+    el('watchDone').innerHTML=done.length?done.slice(0,300).map(function(x){return '<tr><td><b>'+esc(x.num)+'</b></td><td>'+esc(x.start)+'</td><td>'+esc(x.hit)+'</td><td>'+watchDiff(x.start,x.hit)+' ngày</td></tr>';}).join(''):'<tr><td colspan="4">Chưa có số xuất hiện lại trong dữ liệu.</td></tr>';
+  }
+  // v9: chỉ lấy đúng G7 và ĐB; không nhầm giải khác. Giữ số 0 đầu.
+  function prizeDigits(node,out,depth){
+    if(depth>15||node==null)return;
+    if(typeof node==='string'){var t=node.trim();if(t[0]==='{'||t[0]==='['){try{prizeDigits(JSON.parse(t),out,depth+1);}catch(e){}}return;}
+    if(Array.isArray(node)){node.forEach(function(v){prizeDigits(v,out,depth+1);});return;}
+    if(typeof node!=='object')return;
+    if(node.prizes&&typeof node.prizes==='object'){
+      Object.keys(node.prizes).forEach(function(k){if(!/^(g7|g6|db|special|dacbiet)$/i.test(k))return;
+        if(/^g6$/i.test(k)&&out._region!=='MB')return;
+        if(/^g7$/i.test(k)&&out._region==='MB')return;
+        if((out._region==='MB'?/^(db|special|dacbiet|g6|g7)$/i:/^(db|special|dacbiet|g7|g8)$/i).test(k))return;var vals=node.prizes[k];(Array.isArray(vals)?vals:[vals]).forEach(function(v){if(typeof v==='string'||typeof v==='number'){var n=String(v).trim();if(/^\d{3,}$/.test(n))out.push(n.slice(-3));}else if(v&&typeof v==='object')prizeDigits(v,out,depth+1);});
+      });
+    }
+    Object.keys(node).forEach(function(k){if(k!=='prizes')prizeDigits(node[k],out,depth+1);});
+  }
+  function dayOf(d){return new Date(d+'T12:00:00').getDay();}
+  function iso(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+  function addDays(d,n){var x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return iso(x);}
+  function permutations(n){var result={};if(!/^\d{3}$/.test(n))return [];[0,1,2].forEach(function(i){[0,1,2].forEach(function(j){if(i===j)return;[0,1,2].forEach(function(k){if(k!==i&&k!==j)result[n[i]+n[j]+n[k]]=true;});});});return Object.keys(result).sort();}
+  function rowsFor(region){return (coverage[region]&&coverage[region].rows)||[];}
+  function daySet(region,date){var o={};rowsFor(region).forEach(function(r){if(r.draw_date===date)r.nums.forEach(function(n){o[n]=true;});});return o;}
+  function appearedAfter(region,n,start,until){var found='';rowsFor(region).forEach(function(r){if(r.draw_date>start&&r.draw_date<=until&&r.nums.indexOf(n)>=0&&(!found||r.draw_date<found))found=r.draw_date;});return found;}
+  function weeklySeeds(region,day,weeks,until){var end=addDays(until,-1);var start=addDays(until,-7*weeks);var byDate={};rowsFor(region).forEach(function(r){if(r.draw_date<start||r.draw_date>end||dayOf(r.draw_date)!==day)return;
+      var nums=[];nums._region=region;prizeDigits(r.data,nums,0);if(!byDate[r.draw_date])byDate[r.draw_date]={};nums.forEach(function(n){byDate[r.draw_date][n]=true;});
+    });var arr=[];Object.keys(byDate).sort().reverse().forEach(function(d){Object.keys(byDate[d]).forEach(function(n){arr.push({num:n,date:d});});});return arr;}
+  function renderWeekly(){
+    if(!records.length)return;
+    var region=el('weeklyRegion').value,until=el('date').value||iso(new Date()),w=Number(el('weeklyWeeks').value);
+    var day=el('weeklyDay').value==='auto'?dayOf(until):Number(el('weeklyDay').value);
+    var seeds=weeklySeeds(region,day,w,until),groups=[],count=0;
+    seeds.forEach(function(seed){var pending=[],hit=[];permutations(seed.num).forEach(function(n){if(n===seed.num)return;var date=appearedAfter(region,n,seed.date,addDays(until,-1));if(date)hit.push(n+' ('+date+')');else pending.push(n);});if(pending.length)count+=pending.length;groups.push({seed:seed,pending:pending,hit:hit});});
+    el('weeklyRows').innerHTML=groups.length?groups.slice(0,180).map(function(x){return '<tr><td>'+esc(x.seed.num)+'</td><td>'+esc(x.seed.date)+'</td><td>'+esc(x.pending.join(', ')||'Không còn')+'</td><td>'+esc(x.hit.join(', ')||'Chưa có')+'</td></tr>';}).join(''):'<tr><td colspan="4">Không có G7/ĐB cùng thứ trong khoảng dữ liệu.</td></tr>';
+    el('weeklyStatus').textContent=regionName(region)+' · '+seeds.length+' số gốc · '+count+' lượt đảo còn chờ (có thể trùng số giữa các tuần).';
+    // Đối chiếu lịch sử 7 ngày sau ngày gốc; chỉ tính ngày đã có dữ liệu miền này.
+    var dates={};rowsFor(region).forEach(function(r){dates[r.draw_date]=true;});
+    var names=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];var out=[];
+    for(var wd=1;wd<=7;wd++){var actual=wd%7,total=0,hits=0;
+      weeklySeeds(region,actual,Math.min(52,Math.max(9,Number(el('weeklyWeeks').value))),until).forEach(function(seed){var enough=true;for(var i=1;i<=7;i++){if(!dates[addDays(seed.date,i)]){enough=false;break;}}if(!enough) return;
+        permutations(seed.num).forEach(function(n){if(n===seed.num)return;total++;if(appearedAfter(region,n,seed.date,addDays(seed.date,7)))hits++;});
+      });out.push('<tr><td>'+names[actual]+'</td><td>'+total+'</td><td>'+hits+'</td><td>'+(total?(100*hits/total).toFixed(1)+'%':'Thiếu dữ liệu')+'</td></tr>');
+    }el('weekdayRows').innerHTML=out.join('');
+  }
+  function renderPicks(){
+    if(!records.length)return;
+    var until=el('date').value||iso(new Date()),day=dayOf(until);
+    regions.forEach(function(target){var pool={},idx=recentIndex(target),sources=regions.filter(function(r){return r!==target;});
+      sources.forEach(function(src){var si=recentIndex(src);Object.keys(si).forEach(function(n){if(!pool[n])pool[n]={n:n,frequency:0,sources:0,weekly:0};pool[n].frequency+=si[n].count;pool[n].sources++;});});
+      // Thêm trọng số đảo G7/ĐB đúng thứ của chính miền đích.
+      weeklySeeds(target,day,Math.min(52,Math.max(8,Math.round(viewDays()/7))),until).forEach(function(seed){permutations(seed.num).forEach(function(n){if(n===seed.num)return;if(!pool[n])pool[n]={n:n,frequency:0,sources:0,weekly:0};if(!appearedAfter(target,n,seed.date,addDays(until,-1)))pool[n].weekly++;});});
+      var arr=Object.keys(pool).map(function(n){var x=pool[n];x.score=x.sources*15+Math.min(x.frequency,20)*2+x.weekly*10;
+        // số từng ra ở đích vẫn có thể theo dõi nếu đã ra ở nguồn sau đó (cách B).
+        var latestSrc='';sources.forEach(function(src){var t=recentIndex(src)[n];if(t&&t.last>latestSrc)latestSrc=t.last;});
+        x.waiting=!!latestSrc&&!appearedAfter(target,n,latestSrc,addDays(until,-1));
+        if(x.waiting)x.score+=12;return x;
+      }).filter(function(x){return x.waiting||x.weekly>0;});
+      arr.sort(function(a,b){return b.score-a.score||b.weekly-a.weekly||b.frequency-a.frequency||a.n.localeCompare(b.n);});
+      var best=arr[0];el('best'+target).textContent=best?best.n:'—';el('score'+target).textContent=best?'Điểm thống kê: '+best.score:'Không đủ dữ liệu';
+    });el('pickStatus').textContent='Xếp hạng dựa trên dữ liệu đến trước '+until+'. Không phải xác suất trúng; điểm số không được hiệu chuẩn theo tỷ lệ trúng thực tế.';
+  }
+  function manualGet(){try{var a=JSON.parse(localStorage.getItem('lottery_manual_watch_v9')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function manualPut(a){try{localStorage.setItem('lottery_manual_watch_v9',JSON.stringify(a));return true;}catch(e){return false;}}
+  function renderManual(){var a=manualGet();el('manualRows').innerHTML=a.length?a.map(function(x,i){var found=records.length?appearedAfter(x.region,x.num,addDays(x.date,-1),iso(new Date())):'';var state=!records.length?'Chưa tải dữ liệu':found?'Đã ra '+found:'Đang theo dõi (trong dữ liệu đã tải)';return '<tr><td>'+esc(x.num)+'</td><td>'+regionName(x.region)+'</td><td>'+esc(x.date)+'</td><td>'+esc(state)+'</td><td><button type="button" class="secondary" data-remove="'+i+'">Xóa</button></td></tr>';}).join(''):'<tr><td colspan="5">Chưa có số tự chọn.</td></tr>';
+    Array.prototype.forEach.call(el('manualRows').querySelectorAll('[data-remove]'),function(btn){btn.addEventListener('click',function(){var b=manualGet();b.splice(Number(btn.getAttribute('data-remove')),1);manualPut(b);renderManual();});});
+  }
+  function showSaved(){
+    var saved=safeLocalGet();
+    el('history').innerHTML=saved.length?saved.slice(-8).reverse().map(function(v){return '<p><b>'+esc(v.date)+' · '+esc((v.src==='TONG_HOP'?'Tổng hợp 2 miền':regionName(v.src)))+' → '+esc(regionName(v.tgt))+'</b>: '+(v.nums||[]).map(esc).join(', ')+' <span class="muted">'+esc(v.result||'Chưa đối chiếu')+'</span></p>';}).join(''):'Chưa có dự đoán được lưu.';
+  }
+  async function load(){
+    status('Đang đồng bộ dữ liệu xổ số…');
+    var base=el('base').value.trim().replace(/\/+$/,''),key=el('key').value.trim();
+    if(!/^https:\/\//.test(base)||!key){status('Thiếu Supabase URL hoặc publishable / anon key.',true);return;}
+    el('load').disabled=true;
+    safeStorageSet('lottery_public_key',key);
+    try{
+      var cutoff=new Date();cutoff.setDate(cutoff.getDate()-370);
+      var from=cutoff.toISOString().slice(0,10);var before=el('date').value||'9999-12-31';
+      var all=[];
+      for(var i=0;i<regions.length;i++){
+        var region=regions[i];status('Đang tải '+regionName(region)+' ('+(i+1)+'/3)…');
+        var endpoint=new window.URL(base+'/rest/v1/lottery_results');
+        endpoint.searchParams.set('select','region,draw_date,data');
+        endpoint.searchParams.set('region','eq.'+region);
+        endpoint.searchParams.set('and','(draw_date.gte.'+from+',draw_date.lt.'+before+')');
+        endpoint.searchParams.set('order','draw_date.desc');
+        // Supabase/PostgREST thường giới hạn tối đa 1000 hàng mỗi lần gọi.
+        // Phân trang để không bỏ sót dữ liệu lịch sử 90/180/365 ngày.
+        var pageSize=500, offset=0, pages=0;
+        while(true){
+          endpoint.searchParams.set('limit',String(pageSize));
+          endpoint.searchParams.set('offset',String(offset));
+          var controller=new AbortController();
+          var timeout=setTimeout(function(){controller.abort();},30000);
+          var response;
+          try{response=await fetch(endpoint.toString(),{signal:controller.signal,headers:{'apikey':key,'Accept':'application/json'}});}finally{clearTimeout(timeout);}
+          var body=await response.text();
+          if(!response.ok)throw new Error(regionName(region)+' HTTP '+response.status+': '+body.slice(0,250));
+          var rows=JSON.parse(body);
+          if(!Array.isArray(rows))throw new Error('Supabase không trả về danh sách cho '+regionName(region));
+          rows.forEach(function(row){row.region=region;all.push(row);});
+          offset+=rows.length;pages++;
+          status('Đang tải '+regionName(region)+': '+offset+' bản ghi…');
+          if(rows.length<pageSize)break;
+          if(pages>100)throw new Error('Vượt giới hạn 50.000 bản ghi cho '+regionName(region));
+        }
+      }
+      // Bỏ bản ghi trùng hệt nhau, giữ nhiều đài hợp lệ trong cùng ngày.
+      var seenRows={};
+      records=all.map(function(row){row.nums=parseNums(row);row.fourNums=[];row.fourNums._region=row.region;fourCollect(row.data,row.fourNums,0);return row;}).filter(function(row){
+        if(!row.nums.length&&!row.fourNums.length)return false;
+        var sig=row.region+'|'+row.draw_date+'|'+JSON.stringify(row.data);
+        if(seenRows[sig])return false;seenRows[sig]=true;return true;
+      });
+      if(!records.length){
+        var sample=all.length?JSON.stringify(all[0].data).slice(0,180):'không có bản ghi';
+        throw new Error('Supabase trả '+all.length+' bản ghi nhưng không đọc được giải 3 số. Mẫu data: '+sample);
+      }
+      coverage={};regions.forEach(function(region){
+        var subset=records.filter(function(r){return r.region===region;});
+        var dates=Array.from(new Set(subset.map(function(r){return r.draw_date;}))).sort().reverse().slice(0,365);
+        coverage[region]={dates:dates,rows:subset};
+      });
+      var summary=regions.map(function(region){return regionName(region)+': '+coverage[region].dates.length+' ngày';}).join(' · ');
+      el('historyInfo').textContent='Đã tải '+summary+'. Hiển thị '+viewDays()+' ngày gần nhất; theo dõi số chờ dùng toàn bộ lịch sử đã tải.';
+      status('Đã tải dữ liệu: '+summary+'.');render();renderWatch();renderWeekly();renderPicks();renderManual();renderFour();
+      if(regions.some(function(region){return coverage[region].dates.length<45;}))status('Đã tải: '+summary+'. CẢNH BÁO: Dữ liệu dưới 45 ngày ở ít nhất một miền; kết quả chỉ mang tính tham khảo.');
+    }catch(err){status((err.name==='AbortError'?'Quá thời gian chờ 20 giây.':err.message||String(err)),true);}finally{el('load').disabled=false;}
+  }
+
+  // 4-digit analysis is separate from the existing 3-digit parser.
+  function fourCollect(node,out,depth){
+    if(depth>18||node==null)return;
+    if(typeof node==='string'){
+      var v=node.trim();if((v[0]==='{'||v[0]==='[')){try{fourCollect(JSON.parse(v),out,depth+1);}catch(e){}}return;
+    }
+    if(Array.isArray(node)){node.forEach(function(v){fourCollect(v,out,depth+1);});return;}
+    if(typeof node!=='object')return;
+    if(node.prizes&&typeof node.prizes==='object'){
+      Object.keys(node.prizes).forEach(function(k){
+        if((out._region==='MB'?/^(db|special|dacbiet|g6|g7)$/i:/^(db|special|dacbiet|g7|g8)$/i).test(k))return;var vals=node.prizes[k];(Array.isArray(vals)?vals:[vals]).forEach(function(v){
+          if(typeof v==='string'||typeof v==='number'){
+            var t=String(v).trim();if(/^\d{4,}$/.test(t))out.push(t.slice(-4));
+          }else if(v&&typeof v==='object')fourCollect(v,out,depth+1);
+        });
+      });
+    }
+    Object.keys(node).forEach(function(k){if(k!=='prizes')fourCollect(node[k],out,depth+1);});
+  }
+  function fourDraws(region,until){
+    var byDate={};records.forEach(function(r){
+      if(r.draw_date>=until||region!=='ALL'&&r.region!==region)return;
+      var d=r.draw_date;if(!byDate[d])byDate[d]=[];
+      (r.fourNums||[]).forEach(function(n){byDate[d].push(n);});
+    });return byDate;
+  }
+  function fourRank(draws,at,mode){
+    var counts={};Object.keys(draws).forEach(function(d){
+      if(d>=at)return;
+      var delta=watchDiff(d,at),include=mode==='day'?delta<=7:mode==='week'?delta<=28:delta<=56&&dayOf(d)===dayOf(at);
+      if(!include)return;
+      draws[d].forEach(function(n){counts[n]=(counts[n]||0)+1;});
+    });
+    return Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b);}).slice(0,10).map(function(n){return {n:n,score:counts[n]};});
+  }
+  function fourBacktest(draws,until,mode){
+    var dates=Object.keys(draws).filter(function(d){return d<until;}).sort();
+    var tests=0,hits=0;
+    dates.forEach(function(d){
+      // Use only previous dates, and require enough history for the method.
+      var previous=dates.filter(function(x){return x<d&&(mode==='day'?watchDiff(x,d)<=7:mode==='week'?watchDiff(x,d)<=28:watchDiff(x,d)<=56&&dayOf(x)===dayOf(d));});
+      if(previous.length<(mode==='weekday'?3:5))return;
+      var picks=fourRank(draws,d,mode).map(function(x){return x.n;});
+      if(!picks.length)return;
+      tests++;if(picks.some(function(n){return draws[d].indexOf(n)>=0;}))hits++;
+    });return {mode:mode,tests:tests,hits:hits,rate:tests?hits/tests:0};
+  }
+  function fourPermutations(seed){
+    var seen=new Set();
+    function build(prefix,left){
+      if(!left.length){seen.add(prefix);return;}
+      for(var i=0;i<left.length;i++)build(prefix+left[i],left.slice(0,i)+left.slice(i+1));
+    }
+    build('',seed);return Array.from(seen).sort();
+  }
+  function fourPatternGroups(seed){
+    var perm=fourPermutations(seed).filter(function(n){return n!==seed;});
+    var changed=new Set();
+    for(var i=0;i<4;i++)for(var step of [-1,1]){
+      var v=Number(seed[i])+step;
+      if(v>=0&&v<=9)changed.add(seed.slice(0,i)+v+seed.slice(i+1));
+    }
+    var direct=Array.from(changed).filter(function(n){return n!==seed;});
+    var mixed=new Set();
+    direct.forEach(function(n){fourPermutations(n).forEach(function(x){if(x!==n&&x!==seed)mixed.add(x);});});
+    return [{name:'Đảo số',nums:perm},{name:'Tăng/giảm 1 chữ số',nums:direct},{name:'Tăng/giảm rồi đảo',nums:Array.from(mixed)}];
+  }
+  function renderFourPatterns(seed,draws,until){
+    var days=Object.keys(draws).filter(function(d){return d<until&&watchDiff(d,until)<=60;}).sort();
+    var daySet=new Set(days),groups=fourPatternGroups(seed);
+    var events=days.filter(function(d){return draws[d].includes(seed);});
+    var outcomes=groups.map(function(g){
+      var usable=0,hits=0,occurrences=0,matchingDays=[];
+      events.forEach(function(d){
+        var future=days.filter(function(x){var k=watchDiff(d,x);return x>d&&k<=7;});
+        // Require all seven subsequent calendar days present to avoid treating missing draws as misses.
+        if(future.length!==7) return;
+        usable++;
+        var hit=false,ct=0;
+        future.forEach(function(x){draws[x].forEach(function(n){if(g.nums.includes(n)){hit=true;ct++;matchingDays.push(x+' '+n);}});});
+        if(hit)hits++;occurrences+=ct;
+      });
+      return {name:g.name,size:g.nums.length,usable:usable,hits:hits,rate:usable?hits/usable:0,occurrences:occurrences};
+    });
+    el('fourPatternRows').innerHTML=outcomes.map(function(r){return '<tr><td>'+r.name+'</td><td>'+r.size+'</td><td>'+r.usable+'</td><td>'+r.hits+'</td><td>'+(r.usable?(r.rate*100).toFixed(1)+'%':'Chưa đủ dữ liệu')+'</td></tr>';}).join('');
+    var eligible=outcomes.filter(function(r){return r.usable>=5&&r.size>0;}).sort(function(a,b){return b.rate-a.rate||a.size-b.size;});
+    el('fourPatternSummary').textContent=!events.length?'Số gốc '+seed+' chưa xuất hiện trong dữ liệu đã tải: chưa thể kiểm chứng quan hệ sau khi ra.':!eligible.length?'Có '+events.length+' ngày xuất hiện số gốc, nhưng chưa đủ ít nhất 5 lượt có trọn 7 ngày kết quả tiếp theo để chọn kiểu.':'Tỷ lệ quan sát cao nhất: '+eligible[0].name+' ('+(eligible[0].rate*100).toFixed(1)+'%, '+eligible[0].hits+'/'+eligible[0].usable+' lượt). Lưu ý nhóm có nhiều số sẽ dễ xuất hiện hơn; đây không phải xác suất của từng số hay dự báo tương lai.';
+  }
+  function renderFourLookup(){
+    var raw=el('fourSeed').value.trim(),until=el('fourDate').value||iso(new Date()),region=el('fourRegion').value;
+    if(!/^\d{4}$/.test(raw)){
+      el('fourLookupStatus').textContent='Vui lòng nhập đúng 4 chữ số (có thể bắt đầu bằng 0).';
+      el('fourLookupRows').innerHTML='<tr><td colspan="4">Số gốc không hợp lệ.</td></tr>';return;
+    }
+    var nums=fourPermutations(raw),draws=fourDraws(region,until),dates=Object.keys(draws).filter(function(d){return d<until&&watchDiff(d,until)<=60;}).sort();
+    var info={};nums.forEach(function(n){info[n]={count:0,days:{}};});
+    dates.forEach(function(d){draws[d].forEach(function(n){
+      if(info[n]){info[n].count++;info[n].days[d]=(info[n].days[d]||0)+1;}
+    });});
+    var seen=nums.filter(function(n){return info[n].count>0;}).length;
+    el('fourTotalPerm').textContent=nums.length;
+    el('fourNotSeen').textContent=nums.length-seen;
+    el('fourSeen').textContent=seen;
+    el('fourLookupRows').innerHTML=nums.map(function(n){
+      var x=info[n],list=Object.keys(x.days).sort().reverse().map(function(d){return d+' ('+x.days[d]+')';}).join(', ');
+      return '<tr><td>'+n+(n===raw?' (gốc)':'')+'</td><td>'+(x.count?'Đã ra':'Chưa ra')+'</td><td>'+x.count+'</td><td>'+(list||'—')+'</td></tr>';
+    }).join('');
+    el('fourLookupStatus').textContent=dates.length?'Đang soi '+raw+' · '+(region==='ALL'?'3 miền':region)+' · '+dates.length+' ngày có dữ liệu trong 60 ngày trước '+until+'.':'Chưa có dữ liệu trong khoảng chọn; chưa thể kết luận số nào chưa ra.';
+    if(!dates.length){el('fourNotSeen').textContent='–';el('fourSeen').textContent='–';}
+    renderFourPatterns(raw,draws,until);
+  }
+  var fourTop=[];
+  function renderFour(){
+    var region=el('fourRegion').value,until=el('fourDate').value||iso(new Date());
+    if(!records.length){el('fourStatus').textContent='Chưa tải dữ liệu.';return;}
+    var draws=fourDraws(region,until),dates=Object.keys(draws).sort().reverse(),recent=dates.filter(function(d){return watchDiff(d,until)<=60;});
+    var methods=['day','weekday','week'],labels={day:'Theo ngày',weekday:'Theo thứ',week:'Theo tuần'};
+    var results=methods.map(function(m){return fourBacktest(draws,until,m);});
+    var eligible=results.filter(function(r){return r.tests>=10;}).sort(function(a,b){return b.rate-a.rate||b.tests-a.tests;});
+    var selected=el('fourMode').value,auto=selected==='auto';
+    if(auto)selected=eligible.length?eligible[0].mode:'day';
+    el('fourTests').innerHTML=results.map(function(r){return '<tr><td>'+labels[r.mode]+(r.mode===selected?' ✓':'')+'</td><td>'+r.tests+'</td><td>'+r.hits+'</td><td>'+(r.tests?(100*r.rate).toFixed(1)+'%':'Chưa đủ')+'</td></tr>';}).join('');
+    var counts={},last={};recent.forEach(function(d){draws[d].forEach(function(n){counts[n]=(counts[n]||0)+1;if(!last[n]||d>last[n])last[n]=d;});});
+    fourTop=fourRank(draws,until,selected);
+    el('fourRows').innerHTML=fourTop.length?fourTop.map(function(v){return '<tr><td>'+v.n+'</td><td>'+(counts[v.n]||0)+'</td><td>'+(last[v.n]||'—')+'</td><td>'+(last[v.n]?watchDiff(last[v.n],until):'—')+'</td><td>'+v.score+'</td></tr>';}).join(''):'<tr><td colspan="5">Chưa đủ dữ liệu 4 số.</td></tr>';
+    renderFourLookup();
+    el('fourStatus').textContent='Có '+recent.length+' ngày dữ liệu trong 60 ngày · Cách đang dùng: '+labels[selected]+(auto?(eligible.length?' (cao nhất trong các cách có ít nhất 10 ngày kiểm chứng)':' (chưa đủ kiểm chứng để tự chọn)'):'')+'.';
+  }
+  function init(){
+    try{
+      el('load').addEventListener('click',function(){load().catch(function(e){status(e.message||String(e),true);el('load').disabled=false;});});
+      el('show').addEventListener('click',function(){el('key').type=el('key').type==='password'?'text':'password';});
+      ['source','target'].forEach(function(id){el(id).addEventListener('change',render);});
+      el('windowDays').addEventListener('change',function(){if(records.length){render();renderWeekly();renderPicks();}});
+      el('modeSingle').addEventListener('click',function(){combined=false;el('source').disabled=false;el('modeSingle').className='';el('modeCombined').className='secondary';render();});
+      el('modeCombined').addEventListener('click',function(){combined=true;el('source').disabled=true;el('modeSingle').className='secondary';el('modeCombined').className='';render();});
+      el('fourLookupBtn').addEventListener('click',renderFourLookup);
+      el('fourSeed').addEventListener('input',function(){if(/^\d{4}$/.test(el('fourSeed').value))renderFourLookup();});
+      ['fourRegion','fourMode','fourDate'].forEach(function(id){el(id).addEventListener('change',renderFour);});
+      el('fourCopy').addEventListener('click',function(){var t=fourTop.map(function(x){return x.n;}).join(', ');if(!t){alert('Chưa có dữ liệu');return;}if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){alert('Đã sao chép');}).catch(function(){prompt('Sao chép:',t);});else prompt('Sao chép:',t);});
+      el('source').disabled=true;
+      ['weeklyRegion','weeklyWeeks','weeklyDay'].forEach(function(id){el(id).addEventListener('change',renderWeekly);});
+      el('date').addEventListener('change',function(){renderWeekly();renderPicks();});
+      el('manualAdd').addEventListener('click',function(){var n=el('manualNum').value.trim(),d=el('manualDate').value,r=el('manualRegion').value;if(!/^\d{3}$/.test(n)||!/^\d{4}-\d{2}-\d{2}$/.test(d)){el('manualStatus').textContent='Nhập đúng 3 chữ số và ngày bắt đầu.';return;}var a=manualGet();if(a.some(function(x){return x.num===n&&x.region===r&&x.date===d;})){el('manualStatus').textContent='Số này đã có trong danh sách.';return;}a.push({num:n,region:r,date:d});if(!manualPut(a)){el('manualStatus').textContent='Trình duyệt không cho lưu danh sách.';return;}el('manualStatus').textContent='Đã lưu '+n+' để theo dõi ở '+regionName(r);el('manualNum').value='';renderManual();});
+      el('manualClear').addEventListener('click',function(){if(confirm('Xóa toàn bộ số tự chọn?')){manualPut([]);renderManual();}});
+      renderManual();
+      ['watchSource','watchTarget','watchNumber'].forEach(function(id){el(id).addEventListener(id==='watchNumber'?'input':'change',renderWatch);});
+      el('copy').addEventListener('click',function(){if(!top.length){alert('Chưa có số để sao chép');return;}var str=top.map(function(v){return v.num;}).join(', ');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(str).then(function(){alert('Đã sao chép');}).catch(function(){prompt('Sao chép danh sách:',str);});}else prompt('Sao chép danh sách:',str);});
+      el('save').addEventListener('click',function(){if(!top.length){alert('Chưa có dự đoán để lưu');return;}var saved=safeLocalGet();saved.push({date:el('date').value,src:combined?'TONG_HOP':el('source').value,tgt:el('target').value,nums:top.map(function(v){return v.num;}),savedAt:new Date().toISOString()});if(!safeLocalSet(saved.slice(-100))){alert('Trình duyệt không cho lưu lịch sử.');return;}showSaved();alert('Đã lưu dự đoán');});
+      el('check').addEventListener('click',function(){var saved=safeLocalGet();saved.forEach(function(v){var rows=records.filter(function(r){return r.region===v.tgt&&r.draw_date===v.date;});if(!rows.length)return;var numbers={};rows.forEach(function(r){r.nums.forEach(function(n){numbers[n]=true;});});var hits=(v.nums||[]).filter(function(n){return numbers[n];});v.result='Đã đối chiếu: '+hits.length+'/'+v.nums.length+' số ('+(hits.join(', ')||'không có')+')';});safeLocalSet(saved);showSaved();});
+      el('key').value=safeStorageGet('lottery_public_key');showSaved();
+      var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+      el('fourDate').value=iso(tomorrow);el('date').value=iso(tomorrow);el('manualDate').value=iso(new Date());
+      status('Sẵn sàng đồng bộ dữ liệu.');
+      // Tự làm mới sau 60 giây khi có khóa công khai; không lưu khóa quản trị.
+      var statsRefreshing=false;
+      async function refreshStats(){
+        if(statsRefreshing||document.hidden||!el('key').value.trim())return;
+        statsRefreshing=true;
+        try{await load();}catch(e){status('Lỗi tự đồng bộ: '+(e.message||String(e)),true);}
+        finally{statsRefreshing=false;}
+      }
+      setInterval(refreshStats,60000);
+      document.addEventListener('visibilitychange',function(){if(!document.hidden)refreshStats();});
+      if(el('key').value.trim())refreshStats();
+    }catch(e){status('Khởi động thất bại: '+(e.message||String(e)),true);}
+  }
+  window.addEventListener('error',function(e){status('JavaScript: '+e.message,true);});
+  window.addEventListener('unhandledrejection',function(e){status('Kết nối: '+String(e.reason&&e.reason.message||e.reason),true);});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script><script>(function(){'use strict';const D=4;const $=id=>document.getElementById(id);const key='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';const base='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';const clean=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function walk(node,region,date,province,out,depth=0){if(depth>12||node==null)return;if(typeof node==='string'){try{if(/^[\[{]/.test(node.trim()))walk(JSON.parse(node),region,date,province,out,depth+1)}catch(e){}return}if(Array.isArray(node)){node.forEach(x=>walk(x,region,date,province,out,depth+1));return}if(typeof node!=='object')return;province=node.province||node.station||node.tinh||node.name||province|| (region==='MB'?'Miền Bắc':'Không rõ');if(node.prizes&&typeof node.prizes==='object'){Object.entries(node.prizes).forEach(([prize,values])=>{if((region==='MB'?/^(db|special|dacbiet|g6|g7)$/i:/^(db|special|dacbiet|g7|g8)$/i).test(prize))return;(Array.isArray(values)?values:[values]).forEach(v=>{const n=String(v??'');if(/^\d+$/.test(n)&&n.length>=D)out.push({date,region,province,prize,number:n})})})}else{for(const [k,v] of Object.entries(node))if(v&&typeof v==='object')walk(v,region,date,province,out,depth+1)}}function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}function past(d,n){let a=new Date(d+'T12:00:00Z');a.setUTCDate(a.getUTCDate()-n);return a.toISOString().slice(0,10)}let found=[],allDraws=[],perms=[],loaded=false;
+function permutations(s){let set=new Set();function visit(prefix,rest){if(!rest.length){set.add(prefix);return}for(let i=0;i<rest.length;i++)visit(prefix+rest[i],rest.slice(0,i)+rest.slice(i+1))}visit('',s);return [...set].sort()}
+function weekday(d){return ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(d+'T12:00:00Z').getUTCDay()]}
+function filtered(){const st=$('exactStation').value,reg=$('exactRegion').value,day=$('exactWeekday').value;const end=past(today(),1),start=past(end,Number($('exactDays').value)-1);return found.filter(x=>x.date>=start&&x.date<=end&&x.region===reg&&(st==='ALL'||clean(x.province)===st)&&(day==='ALL'||new Date(x.date+'T12:00:00Z').getUTCDay()===Number(day)))}
+function render(){if(!loaded)return;const f=filtered();$('exactCount').textContent=f.length;$('exactDraws').textContent=new Set(f.map(x=>x.date)).size;$('exactLast').textContent=f.length?f[0].date:'Chưa thấy';const counts=new Map(perms.map(p=>[p,0]));f.forEach(x=>counts.set(x.variant,(counts.get(x.variant)||0)+1));$('exactPermSummary').innerHTML='<b>Vòng đảo ('+perms.length+' số):</b><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">'+perms.map(p=>'<span style="background:'+(counts.get(p)?'#e1f6eb':'#f1f2f5')+';border:1px solid #d7dde4;padding:7px 9px;border-radius:8px"><b>'+p+'</b> · '+counts.get(p)+' lần</span>').join('')+'</div><small>Đếm theo bộ lọc hiện tại. 0 lần nghĩa là không tìm thấy trong dữ liệu đã tải, không khẳng định chưa từng xuất hiện.</small>';$('exactRows').innerHTML=f.length?f.slice(0,1000).map(x=>'<tr><td><b>'+escape(x.variant)+'</b></td><td>'+weekday(x.date)+'</td><td>'+escape(x.date)+'</td><td>'+escape(x.region==='MB'?'HN':x.region)+'</td><td>'+escape(x.province)+'</td><td>'+escape(x.prize)+'</td><td>'+escape(x.number)+'</td></tr>').join(''):'<tr><td colspan="7">Không tìm thấy số đảo nào theo bộ lọc và dữ liệu đã tải.</td></tr>'}
+async function run(){const n=$('exactNum').value.trim();if(!new RegExp('^[0-9]{'+D+'}$').test(n)){$('exactStatus').textContent='Vui lòng nhập đúng '+D+' chữ số.';return}const btn=$('exactGo');btn.disabled=true;loaded=false;found=[];perms=permutations(n);$('exactStatus').textContent='Đang tải kết quả và kiểm tra '+perms.length+' số đảo…';try{const regions=[$('exactRegion').value];const end=past(today(),1),start=past(end,Number($('exactDays').value)-1);let all=[];for(const r of regions){const u=new URL(base);u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+r);u.searchParams.set('draw_date','gte.'+start);u.searchParams.set('draw_date','lte.'+end);u.searchParams.set('order','draw_date.desc');let offset=0;const pageSize=500;while(true){u.searchParams.set('limit',String(pageSize));u.searchParams.set('offset',String(offset));const res=await fetch(u,{headers:{apikey:key,Accept:'application/json'}});if(!res.ok)throw Error('Supabase HTTP '+res.status);const rows=await res.json();if(!Array.isArray(rows))throw Error('API không trả về danh sách');for(const row of rows)walk(row.data,r,row.draw_date,'',all);offset+=rows.length;$('exactStatus').textContent='Đã tải '+offset+' kỳ '+r+'; đang kiểm tra dữ liệu lịch sử…';if(rows.length<pageSize)break;if(offset>50000)throw Error('Quá nhiều bản ghi; vui lòng giảm khoảng thời gian')}}all=all.filter(x=>x.date>=start&&x.date<=end);allDraws=all;const permSet=new Set(perms);found=all.filter(x=>x.date>=start&&x.date<=end&&permSet.has(x.number.slice(-D))).map(x=>({...x,variant:x.number.slice(-D)})).sort((a,b)=>b.date.localeCompare(a.date)||a.variant.localeCompare(b.variant));const stations=[...new Set(all.map(x=>x.province))].sort((a,b)=>a.localeCompare(b,'vi'));const old=$('exactStation').value;$('exactStation').innerHTML='<option value="ALL">Tất cả các đài</option>'+stations.map(x=>'<option value="'+escape(clean(x))+'">'+escape(x)+'</option>').join('');$('exactStation').value=stations.some(x=>clean(x)===old)?old:'ALL';loaded=true;$('exactStatus').textContent='Đã kiểm tra '+perms.length+' số đảo của '+$('exactRegion').selectedOptions[0].textContent+' trên '+all.length+' kết quả giải từ '+start+' đến '+end+'. Nếu cơ sở dữ liệu chưa có đủ ngày lịch sử, kết quả vẫn chưa đầy đủ.';render()}catch(e){$('exactStatus').textContent='Không tải được dữ liệu: '+e.message;$('exactCount').textContent='–';$('exactDraws').textContent='–';$('exactLast').textContent='–';$('exactPermSummary').textContent='Không thể xác minh vì tải dữ liệu thất bại.';$('exactRows').innerHTML='<tr><td colspan="7">Không tải được dữ liệu.</td></tr>'}finally{btn.disabled=false}}
+$('exactGo').addEventListener('click',run);$('exactNum').addEventListener('keydown',e=>{if(e.key==='Enter')run()});$('exactRegion').addEventListener('change',()=>{ $('exactStation').innerHTML='<option value="ALL">Tất cả các đài</option>';if(loaded)run();else $('exactStatus').textContent='Đã chọn miền '+$('exactRegion').selectedOptions[0].textContent+'. Nhập số và nhấn Kiểm tra.';});['exactWeekday','exactStation'].forEach(id=>$(id).addEventListener('change',render));$('exactDays').addEventListener('change',()=>{if(/^\d{4}$/.test($('exactNum').value.trim()))run()});})();</script><script>(function(){function boot(){var b=document.getElementById('load'),k=document.getElementById('key');if(k&&!k.value)k.value='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';if(b)b.click();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();})();</script><script>
+(function(){'use strict';
+const $=id=>document.getElementById(id),BASE='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results',KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+let cache=null,cacheKey='';
+const dateShift=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const vnToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const dayOf=s=>new Date(s+'T12:00:00Z').getUTCDay();
+const diff=(a,b)=>Math.round((new Date(b+'T12:00:00Z')-new Date(a+'T12:00:00Z'))/86400000);
+const clean=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function permutations(s){const set=new Set();function rec(prefix,rest){if(!rest.length){set.add(prefix);return}for(let i=0;i<rest.length;i++)rec(prefix+rest[i],rest.slice(0,i)+rest.slice(i+1))}rec('',s);return [...set].sort()}
+function extract(node,region,date,station,out,depth=0){if(depth>16||node==null)return;if(typeof node==='string'){const v=node.trim();if(v[0]==='{'||v[0]==='[')try{extract(JSON.parse(v),region,date,station,out,depth+1)}catch(e){}return}if(Array.isArray(node)){node.forEach(v=>extract(v,region,date,station,out,depth+1));return}if(typeof node!=='object')return;station=node.province||node.station||node.tinh||station||(region==='MB'?'Miền Bắc':'Không rõ đài');if(node.prizes&&typeof node.prizes==='object'){for(const [k,vals] of Object.entries(node.prizes)){if(region==='MB'?/^(db|special|dacbiet|g6|g7)$/i.test(k):/^(db|special|dacbiet|g7|g8)$/i.test(k))continue;for(const v of (Array.isArray(vals)?vals:[vals])){const str=String(v??'').trim();if(/^\d{4,}$/.test(str))out.push({date,region,station,number:str.slice(-4)})}}return}for(const [k,v] of Object.entries(node))if(v&&typeof v==='object')extract(v,region,date,station,out,depth+1)}
+async function fetchRows(region,from,to){const all=[];for(let offset=0;offset<50000;offset+=500){const url=new URL(BASE);for(const [k,v] of Object.entries({select:'region,draw_date,data',region:'eq.'+region,draw_date:'gte.'+from,order:'draw_date.asc',limit:'500',offset:String(offset)}))url.searchParams.set(k,v);url.searchParams.append('draw_date','lte.'+to);const r=await fetch(url,{headers:{apikey:KEY,Accept:'application/json'}});if(!r.ok)throw Error('Supabase HTTP '+r.status);const rows=await r.json();if(!Array.isArray(rows))throw Error('Dữ liệu trả về không hợp lệ');all.push(...rows);$('top4Status').textContent='Đã tải '+all.length+' bản ghi; đang kiểm tra…';if(rows.length<500)break}return all}
+async function run(){const btn=$('top4Go');btn.disabled=true;try{const region=$('exactRegion').value,wd=$('exactWeekday').value,station=$('exactStation').value,days=Number($('exactDays').value),end=dateShift(vnToday(),-1),start=dateShift(end,-days+1),key=[region,start,end].join('|');$('top4Status').textContent='Đang tải kết quả thật…';if(cacheKey!==key){cache=await fetchRows(region,start,end);cacheKey=key}const events=[];const dates=new Set();for(const row of cache){if(row.draw_date<start||row.draw_date>end)continue;dates.add(row.draw_date);extract(row.data,region,row.draw_date,'',events)}const stations=[...new Set(events.map(e=>e.station))].sort((a,b)=>a.localeCompare(b,'vi'));const previous=$('exactStation').value;$('exactStation').innerHTML='<option value="ALL">Tất cả các đài</option>'+stations.map(s=>'<option value="'+esc(clean(s))+'">'+esc(s)+'</option>').join('');$('exactStation').value=stations.some(s=>clean(s)===previous)?previous:'ALL';const chosen=$('exactStation').value;const filtered=events.filter(e=>(wd==='ALL'||dayOf(e.date)===Number(wd))&&(chosen==='ALL'||clean(e.station)===chosen));const validDates=[...new Set(filtered.map(e=>e.date))].sort();if(!filtered.length){$('top4Best').textContent='—';$('top4Rows').innerHTML='<tr><td colspan="6">Không có kết quả giải hợp lệ theo bộ lọc.</td></tr>';$('top4Status').textContent='Không tìm thấy dữ liệu. Hãy đổi miền, thứ, đài hoặc thời gian.';return}
+const mode=$('top4Mode').value,groups=new Map();for(const e of filtered){const id=mode==='perm'?permutations(e.number)[0]:e.number;if(!groups.has(id))groups.set(id,{id,count:0,dates:new Set(),last:'',recent:0});const g=groups.get(id);g.count++;g.dates.add(e.date);if(e.date>g.last)g.last=e.date;const age=diff(e.date,end);g.recent+=age<=14?3:age<=30?2:1}
+const maxRecent=Math.max(...[...groups.values()].map(g=>g.recent));const maxCount=Math.max(...[...groups.values()].map(g=>g.count));const maxDates=Math.max(...[...groups.values()].map(g=>g.dates.size));const ranked=[...groups.values()].map(g=>({...g,score:100*(.45*g.recent/maxRecent+.35*g.count/maxCount+.20*g.dates.size/maxDates)})).sort((a,b)=>b.score-a.score||b.dates.size-a.dates.size||a.id.localeCompare(b.id));const best=ranked[0];$('top4Best').textContent=best.id;$('top4BestNote').textContent=best.count+' lượt · '+best.dates.size+' ngày có kết quả · lần cuối '+best.last+' · '+best.score.toFixed(1)+' điểm';$('top4Rows').innerHTML=ranked.slice(0,Number($('top4Limit').value)).map((g,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(g.id)+'</b></td><td>'+g.count+'</td><td>'+g.dates.size+'</td><td>'+esc(g.last)+'</td><td>'+g.score.toFixed(1)+'</td></tr>').join('');$('top4Status').textContent='Đã phân tích '+filtered.length+' lượt giải, '+validDates.length+' ngày có giải phù hợp trong '+dates.size+' ngày dữ liệu của '+days+' ngày yêu cầu ('+start+' → '+end+'). '+(dates.size<days?'⚠ Dữ liệu lịch sử chưa đủ toàn bộ ngày; không coi ngày thiếu là số chưa ra.':'');
+}catch(e){$('top4Status').textContent='Lỗi tải/phân tích: '+e.message}finally{btn.disabled=false}}
+$('top4Go').addEventListener('click',run);['top4Limit','top4Mode'].forEach(id=>$(id).addEventListener('change',()=>{if(cache)run()}));
+})();
+</script></body></html>
