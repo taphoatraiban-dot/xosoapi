@@ -5,12 +5,13 @@
 (async()=>{const u='https://zigpqddlhvjbjrwhfhaa.supabase.co',k='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';const $=id=>document.getElementById(id), status=s=>$('mgstatus').textContent=s;
 if(!window.supabase){status('Không tải được thư viện đăng nhập. Kiểm tra kết nối mạng.');return}
 const sb=window.supabase.createClient(u,k,{auth:{persistSession:true,autoRefreshToken:true}});window.memberSupabase=sb;
-async function check(){const {data:{user},error}=await sb.auth.getUser();if(error||!user){$('mgform').hidden=false;$('mgtrial').hidden=true;$('mglogout').hidden=true;status('Đăng nhập hoặc đăng ký để dùng thử.');return}
+async function check(){document.body.classList.remove('member-allowed');const gate=$('memberGate');if(gate)gate.hidden=false;const gateStyle=$('memberGateStyle');if(gateStyle)gateStyle.disabled=false;const {data:{user},error}=await sb.auth.getUser();if(error||!user){$('mgform').hidden=false;$('mgtrial').hidden=true;$('mglogout').hidden=true;status('Đăng nhập hoặc đăng ký để dùng thử.');return}
 $('mgform').hidden=true;$('mglogout').hidden=false;
 const r=await sb.rpc('member_access_status');if(r.error){status('Chưa cấu hình quyền thành viên trên Supabase: '+r.error.message);$('mgtrial').hidden=true;return}
-const x=r.data||{};if(x.allowed){document.body.classList.add('member-allowed');$('memberGate').remove();$('memberGateStyle').remove();return}
+const x=r.data||{};if(x.allowed){document.body.classList.add('member-allowed');$('memberGate').hidden=true;const gateStyle=$('memberGateStyle');if(gateStyle)gateStyle.disabled=true;return}
 if(x.can_trial){$('mgtrial').hidden=false;status('Tài khoản chưa kích hoạt. Bấm dùng thử miễn phí 7 ngày.')}else{$('mgtrial').hidden=true;status('Thời hạn sử dụng đã hết. Vui lòng gia hạn 49.000đ/30 ngày.')}
 }
+setInterval(()=>{if(!document.hidden)check().catch(()=>{})},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)check().catch(()=>{})});
 $('mgform').onsubmit=async e=>{e.preventDefault();status('Đang đăng nhập…');const r=await sb.auth.signInWithPassword({email:$('mgemail').value,password:$('mgpassword').value});if(r.error)status(r.error.message);else await check()};
 $('mgregister').onclick=async()=>{status('Đang tạo tài khoản…');const r=await sb.auth.signUp({email:$('mgemail').value,password:$('mgpassword').value});if(r.error)status(r.error.message);else{status('Đăng ký thành công. Nếu Supabase yêu cầu xác nhận email, hãy mở email xác nhận rồi đăng nhập.');if(r.data.session)await check()}};
 $('mgtrial').onclick=async()=>{status('Đang kích hoạt dùng thử…');const r=await sb.rpc('member_start_trial');if(r.error)status('Không thể kích hoạt: '+r.error.message);else await check()};
