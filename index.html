@@ -486,7 +486,7 @@ function todayVN(){return dayStr(vnNow())}
 function addDays(date,n){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return dayStr(d)}
 function vnWeekday(date){return new Date(date+'T12:00:00').getDay()}
 const SCHEDULE={MN:[['Tiền Giang','Kiên Giang','Đà Lạt'],['TP. Hồ Chí Minh','Đồng Tháp','Cà Mau'],['Bến Tre','Vũng Tàu','Bạc Liêu'],['Đồng Nai','Cần Thơ','Sóc Trăng'],['Tây Ninh','An Giang','Bình Thuận'],['Vĩnh Long','Bình Dương','Trà Vinh'],['TP. Hồ Chí Minh','Long An','Bình Phước','Hậu Giang']],MT:[['Khánh Hòa','Kon Tum','Thừa Thiên Huế'],['Thừa Thiên Huế','Phú Yên'],['Đắk Lắk','Quảng Nam'],['Đà Nẵng','Khánh Hòa'],['Bình Định','Quảng Trị','Quảng Bình'],['Gia Lai','Ninh Thuận'],['Đà Nẵng','Quảng Ngãi','Đắk Nông']]};
-function normProvince(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^(tinh|thanhpho)/,'').replace('tphcm','hochiminh').replace('saigon','hochiminh').replace('thuathienhue','hue').replace('dalat','lamdong')}
+function normProvince(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/^(tinh|thanhpho)/,'').replace('tphcm','hochiminh').replace('saigon','hochiminh').replace('thuathienhue','hue').replace('dalat','lamdong')}
 // Chỉ giữ một bảng đầy đủ nhất cho mỗi đài và giới hạn số lượng giải hợp lệ.
 function compactDraws(rows,r){
  const limits=LIVE_PRIZE_COUNTS[r]||(r==='MB'?{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1});
@@ -574,7 +574,7 @@ function liveTable(r,d,verified=[],waiting='Đang chờ'){
  const stations=liveStations(r,d),counts=LIVE_PRIZE_COUNTS[r];
  // LIVE chỉ hiển thị các đài có lịch mở thưởng hôm nay, không tự thêm đài từ API.
  // Chuẩn hóa các biến thể Đắk Lắk / Đắc Lắc / Dak Lak để không tạo cột trùng.
- const stationKey=name=>{const n=normProvince(name);return ['daklak','daclac','daklac','dacklak','daklakprovince'].includes(n)?'daklak':n};
+ const stationKey=name=>{const n=normProvince(name);return ['daklak','daclac','daklac','dacklak','daklakprovince','daklakdaklak'].includes(n)?'daklak':n};
  const displayStations=stations;
  const draws=displayStations.map(station=>verified.find(row=>r==='MB'||stationKey(row.province)===stationKey(station))||null);
  const keys=Object.keys(counts);
