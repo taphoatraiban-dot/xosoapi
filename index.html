@@ -572,8 +572,11 @@ const LIVE_PRIZE_COUNTS={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g
 function liveStations(r,d){return r==='MB'?['Miền Bắc']:((SCHEDULE[r]||[])[vnWeekday(d)]||[])}
 function liveTable(r,d,verified=[],waiting='Đang chờ'){
  const stations=liveStations(r,d),counts=LIVE_PRIZE_COUNTS[r];
- const displayStations=r==='MB'?stations:[...stations,...verified.map(x=>x.province).filter(name=>!stations.some(station=>normProvince(station)===normProvince(name)))];
- const draws=displayStations.map(station=>verified.find(row=>r==='MB'||normProvince(row.province)===normProvince(station))||null);
+ // LIVE chỉ hiển thị các đài có lịch mở thưởng hôm nay, không tự thêm đài từ API.
+ // Chuẩn hóa các biến thể Đắk Lắk / Đắc Lắc / Dak Lak để không tạo cột trùng.
+ const stationKey=name=>{const n=normProvince(name);return ['daklak','daclac','daklac','dacklak','daklakprovince'].includes(n)?'daklak':n};
+ const displayStations=stations;
+ const draws=displayStations.map(station=>verified.find(row=>r==='MB'||stationKey(row.province)===stationKey(station))||null);
  const keys=Object.keys(counts);
  const head='<thead><tr><th>Giải</th>'+displayStations.map(station=>'<th>'+safe(station)+'</th>').join('')+'</tr></thead>';
  const cellContent=(row,k,i)=>{
