@@ -200,7 +200,7 @@ document.getElementById('healthRun').onclick=async()=>{
    }
    const missing=Math.max(0,expectedStations-draws.length);
    const warnings=partial>0||missing>0;
-   out.textContent+=region+': '+(warnings?'CẢNH BÁO':'Đủ bảng và giải')+' — '+complete+' bảng đủ, '+partial+' chưa đủ, '+draws.length+'/'+expectedStations+' bảng đài'+(missing?' (thiếu '+missing+')':'')+(invalid?', '+invalid+' nhóm sai định dạng':'')+'\\n';
+   out.textContent+=region+': '+(warnings?'CẢNH BÁO':'Đủ bảng và giải')+' — '+complete+' bảng đủ, '+partial+' chưa đủ, '+draws.length+'/'+expectedStations+' bảng đài'+(missing?' (thiếu '+missing+')':'')+(invalid?', '+invalid+' nhóm sai định dạng':'')+'\n';
 
   }
   status.textContent='Hoàn thành kiểm tra chỉ đọc · '+day+' '+v('hour')+':'+v('minute');
