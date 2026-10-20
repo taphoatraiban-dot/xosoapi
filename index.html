@@ -437,7 +437,7 @@ function sortStations(rows,date,r){if(r==='MB')return rows;const expected=(SCHED
 const days=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
 const dateText=date=>date.split('-').reverse().join('/');
 function safe(s){return esc(s)}
-async function getRows(r,start,end,force=false){const key=r+'|'+start+'|'+end;if(!force&&cache.has(key))return cache.get(key);const u=new URL('https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results');u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+r);u.searchParams.set('draw_date','gte.'+start);u.searchParams.set('draw_date','lte.'+end);u.searchParams.set('order','draw_date.desc');u.searchParams.set('limit','1000');const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8500);try{const res=await fetch(u,{headers:{apikey:PUBLIC_KEY,Accept:'application/json'},signal:controller.signal,cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);let rows=[];for(const x of await res.json())rows.push(...extractDraws(x.data,r,x.draw_date));const uniq=new Map;for(const a of rows)uniq.set(a.date+'|'+a.province+'|'+JSON.stringify(a.prizes),a);rows=compactDraws([...uniq.values()],r);cache.set(key,rows);return rows;}finally{clearTimeout(timer)}}
+async function getRows(r,start,end,force=false){const key=r+'|'+start+'|'+end;if(!force&&cache.has(key))return cache.get(key);const u=new URL('https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results');u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+r);u.searchParams.set('draw_date','gte.'+start);u.searchParams.set('draw_date','lte.'+end);u.searchParams.set('order','draw_date.desc');u.searchParams.set('limit','1000');const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8500);try{const res=await fetch(u,{headers:{apikey:PUBLIC_KEY,Accept:'application/json'},signal:controller.signal,cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);let rows=[];const payload=await res.json();if(!Array.isArray(payload))throw new Error('API trả về dữ liệu không hợp lệ');for(const x of payload){if(x.region!==r||!/^\d{4}-\d{2}-\d{2}$/.test(String(x.draw_date||''))||x.draw_date<start||x.draw_date>end)continue;rows.push(...extractDraws(x.data,r,x.draw_date));}const uniq=new Map;for(const a of rows)uniq.set(a.date+'|'+a.province+'|'+JSON.stringify(a.prizes),a);rows=compactDraws([...uniq.values()],r);cache.set(key,rows);return rows;}finally{clearTimeout(timer)}}
 function showNumbers(nums=[],special=false){if(!nums.length)return '—';return '<div class="nums">'+nums.map(n=>{const s=String(n);return '<span class="'+(special?'db':'')+'">'+safe(mode==='2'?s.slice(-2):mode==='3'?s.slice(-3):s)+'</span>'}).join('')+'</div>'}
 function prizeTableMB(rows){
  const draw=rows[0]||{prizes:{}};
@@ -618,6 +618,8 @@ async function updateLive(){
   if(signature!==liveLastSignature){
    audioObserveLive(rows,r,d);
    liveLastSignature=signature;
+   // Xóa cache lịch sử của miền khi LIVE nhận kết quả mới để không giữ bảng cũ.
+   for(const key of cache.keys())if(key.startsWith(r+'|'))cache.delete(key);
    el.innerHTML=liveTable(r,d,rows,liveWaiting(r));
    currentRollingSlots=[];decorateLive();
   }
