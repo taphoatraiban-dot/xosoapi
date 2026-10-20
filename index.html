@@ -4,6 +4,11 @@
 <meta name="description" content="Tra cứu kết quả xổ số ba miền theo ngày, xem bảng đầu đuôi, lịch sử các tuần và kết quả khi đến giờ quay.">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#b90016">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./pwa-icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="XOSOAPI">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8504828724795234"
 crossorigin="anonymous"></script>
 <style>
@@ -898,4 +903,6 @@ $('audioVolume').addEventListener('input',e=>{audioPrefs.volume=Number(e.target.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)audioCancel()});
 audioUpdateUI();
 if(!audioSupported)audioStatus('Thiết bị không hỗ trợ giọng đọc; vẫn có thể bật tiếng báo giải mới');
+</script><script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('PWA offline unavailable:',err))})}
 </script></body></html>
