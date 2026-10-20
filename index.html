@@ -643,7 +643,10 @@ async function updateLive(){
    // Xóa cache lịch sử của miền khi LIVE nhận kết quả mới để không giữ bảng cũ.
    for(const key of cache.keys())if(key.startsWith(r+'|'))cache.delete(key);
    // Làm mới bảng lịch sử đang xem khi LIVE có số mới, tránh hiển thị dữ liệu cũ.
-   if(r===region&&d===todayVN()&&!document.hidden)render();
+   if(r===region&&d===todayVN()&&!document.hidden){
+    // Chỉ làm mới lịch sử khi có số thật, tránh render lặp lúc chuyển trạng thái chờ.
+    if(rows.some(row=>Object.values(row.prizes||{}).some(nums=>Array.isArray(nums)&&nums.length)))render();
+   }
    el.innerHTML=liveTable(r,d,rows,liveWaiting(r));
    currentRollingSlots=[];decorateLive();
   }
