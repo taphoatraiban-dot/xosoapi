@@ -66,7 +66,7 @@ h1,h2{margin:0 0 10px}.muted{color:var(--muted)}
 </div>
 
 <section class="card hidden" id="healthPanel"><h2>Giám sát kết quả hôm nay</h2><p class="muted">Chỉ đọc dữ liệu, không chỉnh sửa Supabase.</p><button class="btn" id="healthRun">↻ Kiểm tra lại</button><p class="muted" id="healthStatus"></p><pre id="healthResult" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></section>
-<section class="card hidden" id="auditPanel"><h2>Kiểm toán dữ liệu 365 ngày</h2><p class="muted">Chỉ đọc kết quả ba miền, không chỉnh sửa dữ liệu Supabase.</p><button class="btn" id="auditRun">Bắt đầu kiểm tra</button><p class="muted" id="auditStatus"></p><pre id="auditResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto"></pre></section>
+<section class="card hidden" id="auditPanel"><h2>Kiểm toán dữ liệu 365 ngày</h2><p class="muted">Chỉ đọc kết quả ba miền, không chỉnh sửa dữ liệu Supabase.</p><button class="btn" id="auditRun">Bắt đầu kiểm tra</button> <button class="btn" id="auditDownload" type="button" disabled>⬇ Tải báo cáo TXT</button><p class="muted" id="auditStatus"></p><pre id="auditResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto"></pre></section>
 <section class="card hidden" id="pendingPanel"><h2>Đơn chờ xác nhận</h2><div id="pendingOrders"></div></section>
 <section class="card hidden" id="allPanel"><h2>Tất cả đơn</h2><input id="orderSearch" class="search" placeholder="Tìm email, gói, mã đơn, nội dung chuyển khoản..."><div id="allOrders"></div></section>
 <section class="card hidden" id="accountsPanel"><h2>Tất cả tài khoản</h2><input id="accountSearch" class="search" placeholder="Tìm user ID, API key, gói..."><div id="accounts"></div></section>
@@ -156,7 +156,7 @@ document.getElementById('healthRun').onclick=async()=>{
  const btn=document.getElementById('healthRun'),status=document.getElementById('healthStatus'),out=document.getElementById('healthResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
  if(authError||!auth?.user||!(await isAdmin(auth.user))){status.textContent='Không có quyền Admin';return}
- btn.disabled=true;out.textContent='';
+ btn.disabled=true;out.textContent='';document.getElementById('auditDownload').disabled=true;
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
  const v=k=>parts.find(x=>x.type===k)?.value;
  const day=v('year')+'-'+v('month')+'-'+v('day'),minutes=Number(v('hour'))*60+Number(v('minute'));
@@ -206,6 +206,7 @@ document.getElementById('healthRun').onclick=async()=>{
   status.textContent='Hoàn thành kiểm tra chỉ đọc · '+day+' '+v('hour')+':'+v('minute');
  }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
 };
+document.getElementById('auditDownload').onclick=async()=>{const status=document.getElementById('auditStatus');const {data,error}=await sb.auth.getUser();if(error||!data?.user||!(await isAdmin(data.user))){status.textContent='Không có quyền tải báo cáo.';return}const content=document.getElementById('auditResult').textContent;if(!content.trim()){status.textContent='Chưa có dữ liệu kiểm toán để tải.';return}const blob=new Blob(['XOSOAPI - BÁO CÁO KIỂM TOÁN 365 NGÀY\n'+new Date().toLocaleString('vi-VN')+'\n\n'+content],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='xosoapi-kiem-toan-'+new Date().toISOString().slice(0,10)+'.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)};
 document.getElementById('auditRun').onclick=async()=>{
  const btn=document.getElementById('auditRun'),status=document.getElementById('auditStatus'),out=document.getElementById('auditResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
@@ -283,6 +284,7 @@ document.getElementById('auditRun').onclick=async()=>{
    out.textContent+=region+': '+missing.length+' ngày cần kiểm tra dữ liệu; '+holidays.length+' ngày nghỉ quay; '+pending.length+' ngày chưa đến giờ mở thưởng; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày cần kiểm tra: '+missing.slice(0,35).join(', ')+'\n':'')+(holidays.length?'Nghỉ Tết XSMB (không có kỳ quay): '+holidays.join(', ')+'\n':'')+(pending.length?'Chưa đến giờ mở thưởng: '+pending.join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
   }
   status.textContent='Hoàn thành kiểm tra chỉ đọc. Ngày chưa đọc được không đồng nghĩa dữ liệu đã mất.';
+  document.getElementById('auditDownload').disabled=!out.textContent.trim();
  }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
 };
 (async()=>{const {data:{session},error}=await sb.auth.getSession();if(error){document.getElementById("adminEmail").textContent="Lỗi xác thực";showNotice(error.message);return}
