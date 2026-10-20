@@ -703,6 +703,20 @@ document.getElementById('liveReferenceCompare').onclick=()=>{
  const diff=(liveLatestPrize.at-reference)/1000;
  out.textContent='Giải '+liveLatestPrize.region+' / '+liveLatestPrize.province+' / '+liveLatestPrize.prize.toUpperCase()+' #'+(liveLatestPrize.index+1)+' ('+liveLatestPrize.value+'): '+(diff>=0?'XOSOAPI nhận sau ':'XOSOAPI nhận trước ')+Math.abs(diff).toFixed(1)+' giây so với giờ nhập. Đây là đối chiếu thủ công, không xác minh được giờ nguồn.';
 };
+let liveLastPrizeAt=0,liveLastPrizeRegion='',liveLastPrizeDate='';
+function checkLiveStall(){
+ const el=$('liveConnection');if(!el||document.hidden)return;
+ const r=region,d=todayVN(),phase=livePhase(r);
+ if(phase!=='drawing'||!liveLastPrizeAt||liveLastPrizeRegion!==r||liveLastPrizeDate!==d)return;
+ const seconds=Math.floor((Date.now()-liveLastPrizeAt)/1000);
+ const saved=liveConfirmed.get(r+'|'+d);
+ let count=0;
+ if(saved)for(const row of saved.values())for(const values of Object.values(row.prizes||{}))if(Array.isArray(values))count+=values.filter(v=>/^\\d+$/.test(String(v))).length;
+ const expected=liveStations(r,d).length*Object.values(LIVE_PRIZE_COUNTS[r]).reduce((a,b)=>a+b,0);
+ if(count>=expected||seconds<90||liveFailures>0)return;
+ liveConnectionStatus('LIVE: đã '+seconds+' giây chưa có giải mới · kiểm tra nguồn cập nhật',true);
+}
+setInterval(checkLiveStall,5000);
 let liveFailures=0,liveLastReceivedAt=0;
 function liveConnectionStatus(message,warning=false){const el=$('liveConnection');if(!el)return;el.textContent=message;el.style.background=warning?'#fff3df':'#edf8f0';el.style.color=warning?'#874c00':'#166534'}
 async function updateLive(){
@@ -723,7 +737,9 @@ async function updateLive(){
   const expected=liveStations(r,d);
   const incoming=sortStations(all.filter(x=>x.date===d),d,r); // Không bỏ kết quả thật chỉ vì tên đài khác lịch.
   const rows=sortStations(retainConfirmedLive(incoming,r,d),d,r);
+  const prizeCountBefore=liveTimingSeen.size;
   recordLiveTiming(rows,r,d,Math.round(performance.now()-requestStarted));
+  if(liveTimingSeen.size>prizeCountBefore){liveLastPrizeAt=Date.now();liveLastPrizeRegion=r;liveLastPrizeDate=d;}
   liveLastSuccess=Date.now();liveLastReceivedAt=liveLastSuccess;liveFailures=0;
   liveConnectionStatus("LIVE: đã kết nối · nhận dữ liệu lúc "+new Date(liveLastReceivedAt).toLocaleTimeString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"}));
   const signature=JSON.stringify(rows.map(x=>[x.province,x.prizes]));
