@@ -438,6 +438,33 @@ const days=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Th
 const dateText=date=>date.split('-').reverse().join('/');
 function safe(s){return esc(s)}
 async function getRows(r,start,end,force=false){const key=r+'|'+start+'|'+end;if(!force&&cache.has(key))return cache.get(key);const u=new URL('https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results');u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+r);u.searchParams.set('draw_date','gte.'+start);u.searchParams.set('draw_date','lte.'+end);u.searchParams.set('order','draw_date.desc');u.searchParams.set('limit','1000');const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8500);try{const res=await fetch(u,{headers:{apikey:PUBLIC_KEY,Accept:'application/json'},signal:controller.signal,cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);let rows=[];const payload=await res.json();if(!Array.isArray(payload))throw new Error('API trả về dữ liệu không hợp lệ');for(const x of payload){if(x.region!==r||!/^\d{4}-\d{2}-\d{2}$/.test(String(x.draw_date||''))||x.draw_date<start||x.draw_date>end)continue;rows.push(...extractDraws(x.data,r,x.draw_date));}const uniq=new Map;for(const a of rows){const id=a.date+'|'+normProvince(a.province)+'|'+JSON.stringify(a.prizes);if(uniq.has(id))console.warn('Kết quả trùng đã bỏ qua:',r,a.date,a.province);else uniq.set(id,a);}rows=compactDraws([...uniq.values()],r);for(const draw of rows){const limits=LIVE_PRIZE_COUNTS[r];const actual=Object.entries(limits).reduce((n,[k,max])=>n+Math.min(max,(draw.prizes[k]||[]).length),0);const expected=Object.values(limits).reduce((n,v)=>n+v,0);if(actual<expected&&draw.date<todayVN())console.warn('Kết quả lịch sử chưa đủ:',r,draw.date,draw.province,actual+'/'+expected);}if(!force)cache.set(key,rows);return rows;}finally{clearTimeout(timer)}}
+// Kiểm toán lịch sử 365 ngày: chỉ đọc, không ghi hoặc thay đổi dữ liệu Supabase.
+window.auditLottery365=async function(){
+ const end=todayVN(),start=addDays(end,-364),report={from:start,to:end,regions:{}};
+ for(const r of ['MN','MT','MB']){
+  const summary={daysChecked:365,daysMissing:[],incomplete:[],duplicateDays:[],errors:[]};
+  const seen=new Set();
+  for(let offset=0;offset<365;offset+=7){
+   const until=addDays(end,-offset),from=addDays(end,-Math.min(364,offset+6));
+   try{
+    const rows=await getRows(r,from,until,true);
+    for(const row of rows){
+     const id=row.date+'|'+normProvince(row.province);
+     if(seen.has(id))summary.duplicateDays.push(id);
+     seen.add(id);
+     const counts=LIVE_PRIZE_COUNTS[r];
+     const expected=Object.values(counts).reduce((a,b)=>a+b,0);
+     const actual=Object.entries(counts).reduce((a,[k,max])=>a+Math.min(max,(row.prizes[k]||[]).length),0);
+     if(actual<expected)summary.incomplete.push({date:row.date,province:row.province,actual,expected});
+    }
+   }catch(e){summary.errors.push({from,until,error:String(e.message||e)});}
+  }
+  for(let i=0;i<365;i++){const date=addDays(end,-i);if(![...seen].some(id=>id.startsWith(date+'|')))summary.daysMissing.push(date);}
+  report.regions[r]=summary;
+ }
+ console.info('BÁO CÁO KIỂM TOÁN XỔ SỐ 365 NGÀY (CHỈ ĐỌC)',report);
+ return report;
+};
 function showNumbers(nums=[],special=false){if(!nums.length)return '—';return '<div class="nums">'+nums.map(n=>{const s=String(n);return '<span class="'+(special?'db':'')+'">'+safe(mode==='2'?s.slice(-2):mode==='3'?s.slice(-3):s)+'</span>'}).join('')+'</div>'}
 function prizeTableMB(rows){
  const draw=rows[0]||{prizes:{}};
