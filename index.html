@@ -505,7 +505,7 @@ function setRegion(r,shouldScroll=true,automatic=false){
  document.querySelectorAll('[data-region]').forEach(b=>{const active=b.dataset.region===r;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
  // Thay ngay cả tiêu đề và bảng chờ trước khi tải API, tránh giữ kết quả MN khi chọn MT/HN.
  const d=todayVN();
- $('live').classList.remove('hidden');
+ updateLiveVisibility();
  $('liveTitle').textContent='🔴 Trực tiếp xổ số '+NAMES[r]+' · '+dateText(d);
  $('liveText').textContent='Đang chuyển sang '+NAMES[r]+' và kiểm tra dữ liệu…';
  $('liveLink').href='./ket-qua-truc-tiep.html?region='+r+'&date='+d;
@@ -675,7 +675,17 @@ async function updateLive(){
   }
  }finally{if(seq===liveRefreshSeq)liveBusy=false}
 }
+// Chỉ hiện khu vực LIVE trong các khung 16:00–17:00 (MN), 17:00–18:00 (MT), 18:00–19:00 (MB).
+function updateLiveVisibility(){
+ const now=vnNow(),mins=now.getHours()*60+now.getMinutes();
+ const visible=Object.values(LIVE_START).some(start=>mins>=start&&mins<start+60);
+ for(const id of ['live','liveResults']){
+  const el=$(id);if(el)el.classList.toggle('hidden',!visible);
+ }
+ const panel=document.querySelector('.audio-panel');if(panel)panel.classList.toggle('hidden',!visible);
+}
 function autoSwitch(){
+ updateLiveVisibility();
  const now=vnNow(),mins=now.getHours()*60+now.getMinutes(),day=todayVN();
  let active=null;
  if(mins>=LIVE_START.MB&&mins<LIVE_START.MB+60)active='MB';
