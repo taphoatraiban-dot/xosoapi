@@ -5,8 +5,8 @@
 <header class="head"><div class="wrap"><a href="./index.html">← XOSOAPI</a><h1>🎰 Quay thử dự đoán kết quả</h1><div>Chế độ mô phỏng · Không phải kết quả mở thưởng thật</div></div></header>
 <main class="wrap"><div class="notice"><strong>QUAY THỬ — SỐ NGẪU NHIÊN.</strong> Kết quả mô phỏng không có khả năng dự báo đáng tin cậy kết quả xổ số thực tế. Không dùng để xác nhận trúng thưởng.</div>
 <section class="card"><div class="controls"><label>Miền<select id="region"><option value="MN">Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc</option></select></label><label>Đài<select id="station"></select></label><label>Giải<select id="prize"></select></label></div>
-<div class="controls" style="margin-top:14px"><button class="primary" id="one">▶ Quay giải đã chọn</button><button id="all">▶ Quay toàn bộ giải</button><button id="reset">↻ Làm lại</button></div><p id="status" aria-live="polite">Chọn đài và giải để quay thử.</p></section>
-<section class="card"><h2 id="heading">Bảng kết quả quay thử</h2><div class="scroll"><table id="result"><thead><tr><th>Giải</th><th>Số quay thử</th></tr></thead><tbody id="body"></tbody></table></div></section></main>
+<div class="controls" style="margin-top:14px"><button class="primary" id="one">▶ Quay giải đã chọn</button><button id="all">▶ Quay toàn bộ giải</button><button id="reset">↻ Làm lại</button><button id="save">💾 Lưu lần quay</button></div><p id="status" aria-live="polite">Chọn đài và giải để quay thử.</p></section>
+<section class="card"><h2 id="heading">Bảng kết quả quay thử</h2><div class="scroll"><table id="result"><thead><tr><th>Giải</th><th>Số quay thử</th></tr></thead><tbody id="body"></tbody></table></div></section><section class="card"><h2>Lịch sử quay thử trên thiết bị</h2><p class="hint">Chỉ lưu trên trình duyệt này, không gửi lên máy chủ. Tối đa 20 lần gần nhất.</p><div class="controls"><button id="clearHistory">Xóa lịch sử quay thử</button></div><div id="simHistory" class="scroll"></div></section></main>
 <script>
 const schedule={MN:[['Tiền Giang','Kiên Giang','Đà Lạt'],['TP. Hồ Chí Minh','Đồng Tháp','Cà Mau'],['Bến Tre','Vũng Tàu','Bạc Liêu'],['Đồng Nai','Cần Thơ','Sóc Trăng'],['Tây Ninh','An Giang','Bình Thuận'],['Vĩnh Long','Bình Dương','Trà Vinh'],['TP. Hồ Chí Minh','Long An','Bình Phước','Hậu Giang']],MT:[['Khánh Hòa','Kon Tum','Huế'],['Huế','Phú Yên'],['Đắk Lắk','Quảng Nam'],['Đà Nẵng','Khánh Hòa'],['Bình Định','Quảng Trị','Quảng Bình'],['Gia Lai','Ninh Thuận'],['Đà Nẵng','Quảng Ngãi','Đắk Nông']]};
 const counts={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MB:{g7:4,g6:3,g5:6,g4:4,g3:6,g2:2,g1:1,db:1}};
@@ -22,5 +22,26 @@ function number(w){const a=new Uint32Array(w);crypto.getRandomValues(a);return A
 function delay(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 async function spin(k,token){const w=width[r.value][k],n=counts[r.value][k];values[k]=Array(n).fill('0'.repeat(w));for(let t=0;t<13;t++){if(token!==epoch)return;values[k]=Array.from({length:n},()=>number(w));draw();await delay(85)}if(token!==epoch)return;values[k]=Array.from({length:n},()=>number(w));draw();$('status').textContent='Đã quay thử '+label(k)+' · '+station.value}
 async function run(all){if(busy)return;busy=true;const token=++epoch;$('one').disabled=$('all').disabled=true;try{for(const k of (all?Object.keys(counts[r.value]):[prize.value])){if(token!==epoch)break;await spin(k,token)}}finally{if(token===epoch){busy=false;$('one').disabled=$('all').disabled=false}}}
+const simHistoryKey='xosoapi-simulator-history-v1';
+function readSimHistory(){try{return JSON.parse(localStorage.getItem(simHistoryKey)||'[]')}catch(e){return []}}
+function renderSimHistory(){
+ const el=$('simHistory');el.textContent='';
+ const entries=readSimHistory();
+ if(!entries.length){el.textContent='Chưa lưu lần quay thử nào.';return}
+ for(const item of entries){
+  const p=document.createElement('p');p.className='hint';
+  const lines=Object.entries(item.values||{}).map(([k,nums])=>label(k)+': '+nums.join(' · ')).join(' | ');
+  p.textContent=item.time+' — '+item.region+' — '+item.station+' — '+lines;el.append(p)
+ }
+}
+$('save').onclick=()=>{
+ if(busy){$('status').textContent='Đợi quay xong rồi lưu.';return}
+ if(!Object.keys(values).length){$('status').textContent='Hãy quay ít nhất một giải trước khi lưu.';return}
+ const history=readSimHistory();history.unshift({time:new Date().toLocaleString('vi-VN'),region:r.value,station:station.value,values:JSON.parse(JSON.stringify(values))});
+ try{localStorage.setItem(simHistoryKey,JSON.stringify(history.slice(0,20)));$('status').textContent='Đã lưu lần quay thử trên thiết bị.';renderSimHistory()}
+ catch(e){$('status').textContent='Không thể lưu: trình duyệt đang chặn lưu trữ.'}
+};
+$('clearHistory').onclick=()=>{if(confirm('Xóa toàn bộ lịch sử quay thử trên thiết bị này?')){localStorage.removeItem(simHistoryKey);renderSimHistory()}};
+renderSimHistory();
 r.onchange=refreshStations;station.onchange=reset;prize.onchange=()=>{};$('reset').onclick=reset;$('one').onclick=()=>run(false);$('all').onclick=()=>run(true);refreshStations();
 </script></body></html>
