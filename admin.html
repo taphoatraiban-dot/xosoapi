@@ -156,7 +156,7 @@ document.getElementById('healthRun').onclick=async()=>{
  const btn=document.getElementById('healthRun'),status=document.getElementById('healthStatus'),out=document.getElementById('healthResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
  if(authError||!auth?.user||!(await isAdmin(auth.user))){status.textContent='Không có quyền Admin';return}
- btn.disabled=true;out.textContent='';document.getElementById('auditDownload').disabled=true;
+ btn.disabled=true;out.textContent='';
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
  const v=k=>parts.find(x=>x.type===k)?.value;
  const day=v('year')+'-'+v('month')+'-'+v('day'),minutes=Number(v('hour'))*60+Number(v('minute'));
@@ -198,9 +198,25 @@ document.getElementById('healthRun').onclick=async()=>{
     }
     if(ok)complete++;else partial++;
    }
+   // Đối chiếu số lượng giải từ API Edge với bảng Supabase, không ghi dữ liệu.
+   let edgeNote='';
+   try{
+    const ac=new AbortController(),timeout=setTimeout(()=>ac.abort(),9000),started=performance.now();
+    try{
+     const response=await fetch(SUPABASE_URL+'/functions/v1/xosoapi?region='+region+'&date='+day,{headers:{apikey:SUPABASE_ANON_KEY},signal:ac.signal,cache:'no-store'});
+     const elapsed=Math.round(performance.now()-started);
+     if(!response.ok)edgeNote='; API HTTP '+response.status+' ('+elapsed+'ms)';
+     else{
+      const payload=await response.json();
+      const edgeDraws=extract(payload.data||[]);
+      if(edgeDraws.length&&draws.length&&edgeDraws.length!==draws.length)edgeNote='; CẢNH BÁO: API '+edgeDraws.length+' bảng, Supabase '+draws.length+' bảng ('+elapsed+'ms)';
+      else edgeNote='; API phản hồi '+elapsed+'ms'+(edgeDraws.length?' · '+edgeDraws.length+' bảng':' · chưa có bảng');
+     }
+    }finally{clearTimeout(timeout)}
+   }catch(e){edgeNote='; API không phản hồi trong thời gian kiểm tra'}
    const missing=Math.max(0,expectedStations-draws.length);
    const warnings=partial>0||missing>0;
-   out.textContent+=region+': '+(warnings?'CẢNH BÁO':'Đủ bảng và giải')+' — '+complete+' bảng đủ, '+partial+' chưa đủ, '+draws.length+'/'+expectedStations+' bảng đài'+(missing?' (thiếu '+missing+')':'')+(invalid?', '+invalid+' nhóm sai định dạng':'')+'\n';
+   out.textContent+=region+': '+(warnings?'CẢNH BÁO':'Đủ bảng và giải')+' — '+complete+' bảng đủ, '+partial+' chưa đủ, '+draws.length+'/'+expectedStations+' bảng đài'+(missing?' (thiếu '+missing+')':'')+(invalid?', '+invalid+' nhóm sai định dạng':'')+edgeNote+'\n';
 
   }
   status.textContent='Hoàn thành kiểm tra chỉ đọc · '+day+' '+v('hour')+':'+v('minute');
