@@ -347,6 +347,19 @@ body{background:#f3f3f3}.wrap{background:#fff;box-shadow:0 1px 12px #0000000a}
  .menu{scroll-behavior:auto}
 }
 </style>
+<style id="live-digits-sequential-20261020">
+/* Chỉ các ô chưa có kết quả thật mới chạy số; số đã xác nhận không bị tác động. */
+#liveResults.live-is-drawing .live-rolling-cell .live-wait-anim{
+ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;
+ font-variant-numeric:tabular-nums!important;
+ letter-spacing:.08em!important;
+ animation:none!important;
+ transform:none!important;
+ color:#b42318!important;
+ opacity:1!important;
+}
+#liveResults .live-verified{font-variant-numeric:tabular-nums}
+</style>
 </head><body>
 <div id="menuShade" class="shade" aria-hidden="true"></div>
 <aside id="sideDrawer" class="drawer" aria-label="Danh mục xổ số" aria-hidden="true">
@@ -607,15 +620,17 @@ function decorateLive(){
 function liveDigitWidth(prize){
  return region==='MB'&&prize==='g7'?2:region==='MB'&&prize==='g6'?3:region==='MB'&&['g4','g5'].includes(prize)?4:region==='MB'?5:LIVE_DIGITS[prize]||5;
 }
-let lastDigitTick=0;
+let lastDigitTick=0,liveDigitStep=0;
 function tickLiveDigits(){
  if(document.hidden||livePhase(region)!=='drawing')return;
- const now=performance.now();if(now-lastDigitTick<120)return;lastDigitTick=now;
+ const now=performance.now();if(now-lastDigitTick<90)return;
+ lastDigitTick=now;liveDigitStep++;
  for(const parent of currentRollingSlots){
-  if(!parent.isConnected)continue;
+  if(!parent.isConnected||!parent.classList.contains('live-rolling-cell'))continue;
   const span=parent.querySelector('.live-wait-anim');if(!span)continue;
   const width=liveDigitWidth(parent.dataset.prize);
-  span.textContent=Array.from({length:width},()=>Math.floor(Math.random()*10)).join('');
+  // Hiệu ứng 0–9 tuần tự, từng vị trí lệch nhịp; chỉ là hình ảnh chờ quay.
+  span.textContent=Array.from({length:width},(_,i)=>String((liveDigitStep+i*3)%10)).join('');
  }
 }
 async function updateLive(){
