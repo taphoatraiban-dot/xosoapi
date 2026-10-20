@@ -181,8 +181,17 @@ document.getElementById('auditRun').onclick=async()=>{
     }
    }
    if(errors.length){out.textContent+=region+': Không thể kết luận thiếu ngày do '+errors.length+' lỗi truy vấn.\n'+errors.slice(0,8).join('\n')+'\n\n';continue}
-   for(let i=0;i<365;i++){const day=add(today,-i);if(!found.has(day))missing.push(day)}
-   out.textContent+=region+': '+missing.length+' ngày chưa đọc được dữ liệu; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày chưa đọc được: '+missing.slice(0,35).join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
+   const holidays=[],pending=[];
+   const vnHour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
+   const drawHour={MN:16,MT:17,MB:18}[region];
+   for(let i=0;i<365;i++){
+    const day=add(today,-i);
+    if(found.has(day))continue;
+    if(region==='MB'&&day>='2026-02-16'&&day<='2026-02-19'){holidays.push(day);continue}
+    if(day===today&&vnHour<drawHour){pending.push(day);continue}
+    missing.push(day);
+   }
+   out.textContent+=region+': '+missing.length+' ngày cần kiểm tra dữ liệu; '+holidays.length+' ngày nghỉ quay; '+pending.length+' ngày chưa đến giờ mở thưởng; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày cần kiểm tra: '+missing.slice(0,35).join(', ')+'\n':'')+(holidays.length?'Nghỉ Tết XSMB (không có kỳ quay): '+holidays.join(', ')+'\n':'')+(pending.length?'Chưa đến giờ mở thưởng: '+pending.join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
   }
   status.textContent='Hoàn thành kiểm tra chỉ đọc. Ngày chưa đọc được không đồng nghĩa dữ liệu đã mất.';
  }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
