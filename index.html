@@ -673,6 +673,24 @@ function liveDigitWidth(prize){
 let lastDigitTick=0,liveDigitStep=0;
 function tickLiveDigits(){
  if(document.hidden||livePhase(region)!=='drawing')return;
+ // MB: chọn trực tiếp ô còn thiếu đầu tiên theo thứ tự mở thưởng.
+ // Không phụ thuộc vào bộ nhớ các ô cũ khi bảng LIVE được thay DOM.
+ if(region==='MB'){
+  const el=$('liveResults');
+  if(el){
+   const pending=[...el.querySelectorAll('.live-mb-grid .live-pending-cell')];
+   let target=null;
+   for(const prize of LIVE_DRAW_ORDER.MB){target=pending.find(x=>x.dataset.prize===prize);if(target)break}
+   for(const cell of pending){
+    const rolling=cell===target;
+    cell.classList.toggle('live-rolling-cell',rolling);
+    const label=cell.querySelector('.live-wait-anim');
+    if(label&&!rolling&&/^\\d+$/.test(label.textContent))label.textContent='Đang chờ';
+   }
+   currentRollingSlots=target?[target]:[];
+   el.classList.add('live-is-drawing');
+  }
+ }
  const now=performance.now();if(now-lastDigitTick<90)return;
  lastDigitTick=now;liveDigitStep++;
  for(const parent of currentRollingSlots){
