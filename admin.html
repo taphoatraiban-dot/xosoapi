@@ -169,14 +169,37 @@ document.getElementById('auditRun').onclick=async()=>{
     if(error){errors.push(from+': '+error.message);continue}
     for(const row of data||[]){
      found.add(row.draw_date);
-     const draws=Array.isArray(row.data)?row.data:(Array.isArray(row.data?.data)?row.data.data:[]);
+     const draws=[];
+     const walk=(v,province='',depth=0)=>{
+      if(depth>12||v==null)return;
+      if(typeof v==='string'&&/^[\\[{]/.test(v.trim())){try{walk(JSON.parse(v),province,depth+1)}catch(e){}return}
+      if(Array.isArray(v)){v.forEach(x=>walk(x,province,depth+1));return}
+      if(typeof v!=='object')return;
+      const prov=String(v.province||v.station||v.tinh||v.name||province||(region==='MB'?'Miền Bắc':'Không rõ đài'));
+      if(v.prizes&&typeof v.prizes==='object')draws.push({province:prov,prizes:v.prizes});
+      for(const [k,child] of Object.entries(v))if(!['prizes','province','station','tinh','name'].includes(k)&&child&&typeof child==='object')walk(child,prov,depth+1);
+     };
+     walk(row.data);
+     if(!draws.length){incomplete.push(row.draw_date+' không tìm thấy bảng giải hợp lệ');continue}
      for(const draw of draws){
-      if(!draw?.prizes)continue;
-      const id=row.draw_date+'|'+String(draw.province||draw.name||'');
+      const id=row.draw_date+'|'+draw.province;
       if(seen.has(id))continue;seen.add(id);
-      const expected=Object.values(maxes[region]).reduce((a,b)=>a+b,0);
-      const actual=Object.entries(maxes[region]).reduce((a,[k,n])=>a+Math.min(n,Array.isArray(draw.prizes[k])?draw.prizes[k].length:0),0);
-      if(actual<expected)incomplete.push(id+' '+actual+'/'+expected);
+      const lengths=region==='MB'?{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}:{g8:2,g7:3,g6:4,g5:4,g4:5,g3:5,g2:5,g1:5,db:6};
+      const normalized={};
+      for(const [key,value] of Object.entries(draw.prizes)){
+       let k=key.toLowerCase().replace(/[^a-z0-9]/g,'');
+       if(k==='special'||k==='dacbiet')k='db';
+       if(!Object.hasOwn(maxes[region],k))continue;
+       normalized[k]=Array.isArray(value)?value:[value];
+      }
+      const problems=[];
+      for(const [k,expected] of Object.entries(maxes[region])){
+       const nums=normalized[k]||[];
+       if(nums.length!==expected)problems.push(k+': '+nums.length+'/'+expected);
+       const invalid=nums.filter(n=>!new RegExp('^\\\\d{'+lengths[k]+'}$').test(String(n).trim()));
+       if(invalid.length)problems.push(k+': '+invalid.length+' số sai độ dài/ký tự');
+      }
+      if(problems.length)incomplete.push(id+' ['+problems.join('; ')+']');
      }
     }
    }
