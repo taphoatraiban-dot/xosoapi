@@ -628,7 +628,7 @@ function livePhase(r){const n=vnNow(),m=n.getHours()*60+n.getMinutes();return m<
 function liveWaiting(r){return livePhase(r)==='before'?'Chờ mở thưởng':'Đang quay'}
 // Hai trạng thái: ô đang quay hiển thị số chạy mô phỏng; ô chưa đến lượt xoay mũi tên.
 // Không bao giờ lưu số mô phỏng hoặc coi đó là kết quả thật.
-const LIVE_DRAW_ORDER={MN:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MT:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MB:['g7','g6','g5','g4','g3','g2','g1','db']};
+const LIVE_DRAW_ORDER={MN:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MT:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MB:['g1','g2','g3','g4','g5','g6','g7','db']};
 const LIVE_DIGITS={g8:2,g7:3,g6:4,g5:4,g4:5,g3:5,g2:5,g1:5,db:6};
 // Hai hiệu ứng: số chạy ở ô đang mở, vòng quay nhẹ ở các ô còn chờ.
 // Chỉ cập nhật DOM khi ô đang quay thay đổi, tránh giật mỗi giây.
