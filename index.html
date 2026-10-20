@@ -580,7 +580,7 @@ function liveTable(r,d,verified=[],waiting='Đang chờ'){
   body=keys.map(k=>'<tr data-live-prize="'+k+'"><th>'+PRIZES[k]+'</th><td><div class="live-number-grid" style="--live-cols:'+columns[k]+'">'+Array.from({length:counts[k]},(_,i)=>'<div class="live-number-slot">'+cellContent(draws[0],k,i)+'</div>').join('')+'</div></td></tr>').join('');
  }else{
   body=keys.map(k=>Array.from({length:counts[k]},(_,i)=>{
-   const cells=draws.map((row,station)=>'<td><div class="live-number-slot">'+cellContent(row,k,i)+'</div></td>').join('');
+   const cells=draws.map((row,station)=>'<td data-live-station="'+station+'"><div class="live-number-slot">'+cellContent(row,k,i)+'</div></td>').join('');
    return '<tr data-live-prize="'+k+'" data-live-slot="'+i+'">'+(i===0?'<th rowspan="'+counts[k]+'">'+PRIZES[k]+'</th>':'')+cells+'</tr>';
   }).join('')).join('');
  }
@@ -636,7 +636,7 @@ function decorateLive(){
   for(let station=0;station<stations;station++){
    for(const prize of order){
     const candidates=pending.filter(x=>x.dataset.prize===prize);
-    const target=region==='MB'?candidates[0]:candidates.find(x=>x.closest('td')?.cellIndex===station+1);
+    const target=region==='MB'?candidates[0]:candidates.find(x=>x.closest('td')?.dataset.liveStation===String(station));
     if(target){rolling.push(target);break}
    }
   }
