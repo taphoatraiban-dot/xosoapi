@@ -731,7 +731,7 @@ async function getLiveFallback(r,d){
   return draws.filter(x=>x.date===d&&x.province&&x.prizes&&typeof x.prizes==='object');
  }finally{clearTimeout(timer)}
 }
-const liveSourceStats={primary:null,edge:null,conflicts:0};
+const liveSourceStats={primary:null,edge:null,conflicts:0};const liveConflictKeys=new Set();
 function liveSourceReport(){
  const el=$('liveSourceMonitor');if(!el)return;
  const fmt=(name,info)=>name+': '+(!info?'chưa thử':info.ok?'OK · '+info.ms+'ms':'Lỗi · '+info.ms+'ms');
@@ -748,7 +748,10 @@ function compareLiveSources(a,b,r,d){
    const previous=old.prizes?.[prize]||[];
    if(!Array.isArray(values))continue;
    values.forEach((value,i)=>{
-    if(previous[i]!=null&&/^\\d+$/.test(String(value))&&/^\\d+$/.test(String(previous[i]))&&String(value)!==String(previous[i]))conflicts++;
+    if(previous[i]!=null&&/^\d+$/.test(String(value))&&/^\d+$/.test(String(previous[i]))&&String(value)!==String(previous[i])){
+     const key=[r,d,r==='MB'?'MB':normProvince(row.province),prize,i,String(previous[i]),String(value)].join('|');
+     if(!liveConflictKeys.has(key)){liveConflictKeys.add(key);conflicts++}
+    }
    });
   }
  }
