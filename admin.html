@@ -141,16 +141,27 @@ async function loadPayments(){const el=document.getElementById('paymentList'),ms
 document.getElementById('paymentRefresh').onclick=loadPayments;
 
 document.getElementById('auditRun').onclick=async()=>{
- const button=document.getElementById('auditRun'),status=document.getElementById('auditStatus'),out=document.getElementById('auditResult');
+ const btn=document.getElementById('auditRun'),status=document.getElementById('auditStatus'),out=document.getElementById('auditResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
  if(authError||!auth?.user||!(await isAdmin(auth.user))){status.textContent='Không có quyền quản trị.';return}
- button.disabled=true;out.textContent='';
- const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
- const add=(day,offset)=>{const d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+offset);return d.toISOString().slice(0,10)};
- const counts={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
+ btn.disabled=true;out.textContent='';
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const val=k=>parts.find(x=>x.type===k)?.value;
+ const today=val('year')+'-'+val('month')+'-'+val('day');
+ const add=(date,n)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+ const maxes={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
  try{
+  // Đối chiếu một ngày gần đây bằng API công khai trước khi tin vào số liệu RLS.
+  const checkDay=add(today,-1);
+  const probe=await fetch(SUPABASE_URL+'/rest/v1/lottery_results?select=region,draw_date&region=eq.MB&draw_date=eq.'+checkDay+'&limit=1',{headers:{apikey:SUPABASE_ANON_KEY,Accept:'application/json'},cache:'no-store'});
+  const publicRows=probe.ok?await probe.json():null;
+  const authProbe=await sb.from('lottery_results').select('region,draw_date').eq('region','MB').eq('draw_date',checkDay).limit(1);
+  if(authProbe.error){status.textContent='Không đọc được bảng lottery_results: '+authProbe.error.message;return}
+  if(Array.isArray(publicRows)&&publicRows.length>0&&(authProbe.data||[]).length===0){status.textContent='Cảnh báo RLS: API công khai có dữ liệu '+checkDay+' nhưng phiên Admin không thấy. Dừng kiểm toán để tránh báo thiếu giả.';return}
+  if(!probe.ok){out.textContent='Chưa đối chiếu được API công khai (HTTP '+probe.status+'). Kết quả bên dưới chỉ phản ánh quyền đọc hiện tại.\n'}
+  else if(Array.isArray(publicRows)&&publicRows.length===0&&(authProbe.data||[]).length===0){out.textContent='Lưu ý: Cả hai cách đọc đều chưa thấy MB ngày '+checkDay+'. Không thể xác minh RLS bằng ngày này.\n'}
   for(const region of ['MN','MT','MB']){
-   const found=new Set(),missing=[],incomplete=[],errors=[];
+   const found=new Set(),missing=[],incomplete=[],errors=[],seen=new Set();
    for(let offset=0;offset<365;offset+=7){
     const from=add(today,-Math.min(offset+6,364)),to=add(today,-offset);
     status.textContent='Đang kiểm tra '+region+' · '+from+' đến '+to;
@@ -161,19 +172,21 @@ document.getElementById('auditRun').onclick=async()=>{
      const draws=Array.isArray(row.data)?row.data:(Array.isArray(row.data?.data)?row.data.data:[]);
      for(const draw of draws){
       if(!draw?.prizes)continue;
-      const expected=Object.values(counts[region]).reduce((a,b)=>a+b,0);
-      const actual=Object.entries(counts[region]).reduce((a,[key,max])=>a+Math.min(max,Array.isArray(draw.prizes[key])?draw.prizes[key].length:0),0);
-      if(actual<expected)incomplete.push(row.draw_date+' '+String(draw.province||'')+' '+actual+'/'+expected);
+      const id=row.draw_date+'|'+String(draw.province||draw.name||'');
+      if(seen.has(id))continue;seen.add(id);
+      const expected=Object.values(maxes[region]).reduce((a,b)=>a+b,0);
+      const actual=Object.entries(maxes[region]).reduce((a,[k,n])=>a+Math.min(n,Array.isArray(draw.prizes[k])?draw.prizes[k].length:0),0);
+      if(actual<expected)incomplete.push(id+' '+actual+'/'+expected);
      }
     }
    }
-   for(let i=0;i<365;i++){const d=add(today,-i);if(!found.has(d))missing.push(d)}
-   out.textContent+=region+': '+missing.length+' ngày không có dữ liệu, '+incomplete.length+' bảng thiếu số, '+errors.length+' lỗi truy vấn\\n'+(missing.length?'Ngày thiếu: '+missing.slice(0,30).join(', ')+'\\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,30).join('; ')+'\\n':'')+(errors.length?'Lỗi: '+errors.join('; ')+'\\n':'')+'\\n';
+   if(errors.length){out.textContent+=region+': Không thể kết luận thiếu ngày do '+errors.length+' lỗi truy vấn.\n'+errors.slice(0,8).join('\n')+'\n\n';continue}
+   for(let i=0;i<365;i++){const day=add(today,-i);if(!found.has(day))missing.push(day)}
+   out.textContent+=region+': '+missing.length+' ngày chưa đọc được dữ liệu; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày chưa đọc được: '+missing.slice(0,35).join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
   }
-  status.textContent='Đã kiểm tra xong. Không thay đổi dữ liệu.';
- }catch(e){status.textContent='Lỗi kiểm toán: '+String(e.message||e)}finally{button.disabled=false}
+  status.textContent='Hoàn thành kiểm tra chỉ đọc. Ngày chưa đọc được không đồng nghĩa dữ liệu đã mất.';
+ }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
 };
-
 (async()=>{const {data:{session},error}=await sb.auth.getSession();if(error){document.getElementById("adminEmail").textContent="Lỗi xác thực";showNotice(error.message);return}
 if(!session?.user){location.href="./login.html";return}
 document.getElementById("adminEmail").textContent=session.user.email||"Đã đăng nhập";
