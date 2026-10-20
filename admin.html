@@ -61,8 +61,10 @@ h1,h2{margin:0 0 10px}.muted{color:var(--muted)}
  <button class="tab" data-tab="accounts">Tất cả tài khoản</button>
  <button class="tab" data-tab="members">👑 Thành viên VIP/PRO</button>
  <button class="tab" data-tab="payments">💳 Duyệt gói thống kê 49K</button>
+ <button class="tab" data-tab="audit">🔎 Kiểm toán 365 ngày</button>
 </div>
 
+<section class="card hidden" id="auditPanel"><h2>Kiểm toán dữ liệu 365 ngày</h2><p class="muted">Chỉ đọc kết quả ba miền, không chỉnh sửa dữ liệu Supabase.</p><button class="btn" id="auditRun">Bắt đầu kiểm tra</button><p class="muted" id="auditStatus"></p><pre id="auditResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto"></pre></section>
 <section class="card hidden" id="pendingPanel"><h2>Đơn chờ xác nhận</h2><div id="pendingOrders"></div></section>
 <section class="card hidden" id="allPanel"><h2>Tất cả đơn</h2><input id="orderSearch" class="search" placeholder="Tìm email, gói, mã đơn, nội dung chuyển khoản..."><div id="allOrders"></div></section>
 <section class="card hidden" id="accountsPanel"><h2>Tất cả tài khoản</h2><input id="accountSearch" class="search" placeholder="Tìm user ID, API key, gói..."><div id="accounts"></div></section>
@@ -118,7 +120,7 @@ if(k.error){
 }
 ACCOUNTS=k.error?[]:(k.data||[]);
 if(k.error)showNotice("Lỗi đọc tài khoản API: "+k.error.message);let u=await sb.from("api_usage_daily").select("api_key_id,usage_date,request_count");USAGE=u.error?[]:(u.data||[]);renderAccounts()}
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["pending","all","accounts","members","payments"].forEach(x=>document.getElementById(x+"Panel").classList.toggle("hidden",x!==b.dataset.tab))});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["pending","all","accounts","members","payments","audit"].forEach(x=>document.getElementById(x+"Panel").classList.toggle("hidden",x!==b.dataset.tab))});
 function memberNotice(t,ok=false){let n=document.getElementById("memberNotice");n.className="notice "+(ok?"ok":"err");n.textContent=t}
 function validUid(s){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)}
 async function loadMembers(){let r=await sb.rpc("admin_member_list");if(r.error){memberNotice("Không đọc được thành viên: "+r.error.message+" — hãy kiểm tra SQL quản lý VIP/PRO.");document.getElementById("memberList").textContent="Lỗi tải dữ liệu. Chưa thể xác nhận số thành viên.";return}MEMBERS=r.data||[];renderMembers()}
