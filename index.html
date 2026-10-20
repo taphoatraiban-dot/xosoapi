@@ -331,6 +331,22 @@ body{background:#f3f3f3}.wrap{background:#fff;box-shadow:0 1px 12px #0000000a}
 @keyframes liveNumberAppear{0%{background:#fff0a3;color:#c53227}100%{background:transparent}}
 @media(prefers-reduced-motion:reduce){#liveResults .live-pending-cell:not(.live-rolling-cell) .live-wait-anim,#liveResults .live-verified{animation:none!important}}
 </style>
+<style id="mobile-performance-20261020">
+/* Mobile: keep lottery tables readable without widening the whole page. */
+@media(max-width:600px){
+ html,body{max-width:100%;overflow-x:clip}
+ .wrap{width:100%;min-width:0}
+ .header{min-width:0}
+ .header img{max-width:100%;height:auto}
+ .menu{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+ .region-btn,.week-nav button{touch-action:manipulation}
+ .day{content-visibility:auto;contain-intrinsic-size:auto 650px}
+ #liveResults .day{content-visibility:visible}
+}
+@media(prefers-reduced-motion:reduce){
+ .menu{scroll-behavior:auto}
+}
+</style>
 </head><body>
 <div id="menuShade" class="shade" aria-hidden="true"></div>
 <aside id="sideDrawer" class="drawer" aria-label="Danh mục xổ số" aria-hidden="true">
