@@ -182,6 +182,7 @@ document.getElementById('healthRun').onclick=async()=>{
    }
    let complete=0,partial=0,invalid=0;
    const widths=region==='MB'?{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}:{g8:2,g7:3,g6:4,g5:4,g4:5,g3:5,g2:5,g1:5,db:6};
+   const expectedStations=region==='MB'?1:({MN:[3,3,3,3,3,3,4],MT:[3,2,2,2,3,2,3]}[region]||[])[new Date(day+'T12:00:00Z').getUTCDay()];
    for(const prizeSet of draws){
     const normalized={};
     for(const [raw,values] of Object.entries(prizeSet)){
@@ -197,7 +198,10 @@ document.getElementById('healthRun').onclick=async()=>{
     }
     if(ok)complete++;else partial++;
    }
-   out.textContent+=region+': '+(partial?'CẢNH BÁO có bảng thiếu/sai giải':'Các bảng đọc được đủ giải')+' — '+complete+' đủ, '+partial+' chưa đủ'+(invalid?', '+invalid+' nhóm sai định dạng':'')+'\n';
+   const missing=Math.max(0,expectedStations-draws.length);
+   const warnings=partial>0||missing>0;
+   out.textContent+=region+': '+(warnings?'CẢNH BÁO':'Đủ bảng và giải')+' — '+complete+' bảng đủ, '+partial+' chưa đủ, '+draws.length+'/'+expectedStations+' bảng đài'+(missing?' (thiếu '+missing+')':'')+(invalid?', '+invalid+' nhóm sai định dạng':'')+'\\n';
+
   }
   status.textContent='Hoàn thành kiểm tra chỉ đọc · '+day+' '+v('hour')+':'+v('minute');
  }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
