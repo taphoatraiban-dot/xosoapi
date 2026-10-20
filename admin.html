@@ -62,8 +62,10 @@ h1,h2{margin:0 0 10px}.muted{color:var(--muted)}
  <button class="tab" data-tab="members">👑 Thành viên VIP/PRO</button>
  <button class="tab" data-tab="payments">💳 Duyệt gói thống kê 49K</button>
  <button class="tab" data-tab="audit">🔎 Kiểm toán 365 ngày</button>
+ <button class="tab" data-tab="health">🚨 Giám sát kết quả</button>
 </div>
 
+<section class="card hidden" id="healthPanel"><h2>Giám sát cập nhật kết quả hôm nay</h2><p class="muted">Chỉ đọc dữ liệu Supabase. Kiểm tra sau giờ quay, không tự sửa/xóa dữ liệu.</p><button class="btn" id="healthRun">↻ Kiểm tra lại</button><p class="muted" id="healthStatus"></p><div id="healthResults" style="white-space:pre-wrap;line-height:1.7"></div></section>
 <section class="card hidden" id="auditPanel"><h2>Kiểm toán dữ liệu 365 ngày</h2><p class="muted">Chỉ đọc kết quả ba miền, không chỉnh sửa dữ liệu Supabase.</p><button class="btn" id="auditRun">Bắt đầu kiểm tra</button><p class="muted" id="auditStatus"></p><pre id="auditResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto"></pre></section>
 <section class="card hidden" id="pendingPanel"><h2>Đơn chờ xác nhận</h2><div id="pendingOrders"></div></section>
 <section class="card hidden" id="allPanel"><h2>Tất cả đơn</h2><input id="orderSearch" class="search" placeholder="Tìm email, gói, mã đơn, nội dung chuyển khoản..."><div id="allOrders"></div></section>
@@ -120,7 +122,7 @@ if(k.error){
 }
 ACCOUNTS=k.error?[]:(k.data||[]);
 if(k.error)showNotice("Lỗi đọc tài khoản API: "+k.error.message);let u=await sb.from("api_usage_daily").select("api_key_id,usage_date,request_count");USAGE=u.error?[]:(u.data||[]);renderAccounts()}
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["pending","all","accounts","members","payments","audit"].forEach(x=>document.getElementById(x+"Panel").classList.toggle("hidden",x!==b.dataset.tab))});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["pending","all","accounts","members","payments","audit","health"].forEach(x=>document.getElementById(x+"Panel").classList.toggle("hidden",x!==b.dataset.tab))});
 function memberNotice(t,ok=false){let n=document.getElementById("memberNotice");n.className="notice "+(ok?"ok":"err");n.textContent=t}
 function validUid(s){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)}
 async function loadMembers(){let r=await sb.rpc("admin_member_list");if(r.error){memberNotice("Không đọc được thành viên: "+r.error.message+" — hãy kiểm tra SQL quản lý VIP/PRO.");document.getElementById("memberList").textContent="Lỗi tải dữ liệu. Chưa thể xác nhận số thành viên.";return}MEMBERS=r.data||[];renderMembers()}
@@ -140,6 +142,182 @@ document.getElementById("accountSearch").oninput=e=>{let q=e.target.value.toLowe
 async function loadPayments(){const el=document.getElementById('paymentList'),msg=document.getElementById('paymentNotice');msg.textContent='Đang tải đơn...';const r=await sb.rpc('ott_admin_orders');if(r.error){msg.textContent='Lỗi: '+r.error.message;return}const rows=r.data||[];msg.textContent='Có '+rows.filter(x=>x.status==='pending').length+' đơn chờ duyệt / '+rows.length+' đơn gần nhất.';el.innerHTML=rows.map(x=>`<div class="order"><div class="grid"><div><div class="label">Mã đơn</div><div class="value">OTT${esc(x.id)}</div></div><div><div class="label">Email</div><div class="value">${esc(x.email||x.user_id)}</div></div><div><div class="label">Số tiền</div><div class="value">${fmt(x.amount_vnd)}đ</div></div><div><div class="label">Trạng thái</div><div class="value">${esc(x.status)}</div></div><div><div class="label">Ngày tạo</div><div class="value">${fmtDate(x.created_at)}</div></div><div><div class="label">Thời hạn</div><div class="value">${esc(x.duration_days)} ngày</div></div></div>${x.status==='pending'?`<div class="actions"><button class="btn green paymentAction" data-id="${x.id}" data-approve="true">Đã nhận tiền · Duyệt +30 ngày</button><button class="btn red paymentAction" data-id="${x.id}" data-approve="false">Từ chối</button></div>`:''}</div>`).join('')||'<div class="empty">Chưa có đơn</div>';el.querySelectorAll('.paymentAction').forEach(b=>b.onclick=async()=>{const ok=b.dataset.approve==='true',id=Number(b.dataset.id);if(!confirm(ok?'ĐÃ KIỂM TRA VPBank nhận đủ 49.000đ cho mã OTT'+id+'?':'Từ chối đơn OTT'+id+'?'))return;b.disabled=true;const r=await sb.rpc('ott_admin_review',{p_order_id:id,p_approve:ok});if(r.error){msg.textContent='Lỗi duyệt: '+r.error.message;b.disabled=false;return}await loadPayments()})}
 document.getElementById('paymentRefresh').onclick=loadPayments;
 
+// Giám sát read-only; không kết luận thiếu khi chưa đến giờ quay hoặc lỗi kết nối.
+document.getElementById('healthRun').onclick=async()=>{
+ const btn=document.getElementById('healthRun'),status=document.getElementById('healthStatus'),out=document.getElementById('healthResults');
+ const {data:auth,error:authError}=await sb.auth.getUser();
+ if(authError||!auth?.user||!(await isAdmin(auth.user))){status.textContent='Không có quyền quản trị.';return}
+ btn.disabled=true;out.textContent='';
+ const now=new Date(),fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+ const parts=fmt.formatToParts(now),get=k=>parts.find(p=>p.type===k)?.value;
+ const day=get('year')+'-'+get('month')+'-'+get('day'),minutes=Number(get('hour'))*60+Number(get('minute'));
+ const limits={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
+ const start={MN:960,MT:1020,MB:1080};
+ const collect=(value,out=[],depth=0)=>{
+  if(depth>12||value==null)return out;
+  if(typeof value==='string'&&/^[\\[{]/.test(value.trim())){try{collect(JSON.parse(value),out,depth+1)}catch(e){}return out}
+  if(Array.isArray(value)){value.forEach(v=>collect(v,out,depth+1));return out}
+  if(typeof value!=='object')return out;
+  if(value.prizes&&typeof value.prizes==='object')out.push(value.prizes);
+  for(const [k,v] of Object.entries(value))if(k!=='prizes'&&v&&typeof v==='object')collect(v,out,depth+1);
+  return out;
+ };
+ try{
+  status.textContent='Đang kiểm tra '+day+' (giờ Việt Nam)…';
+  for(const region of ['MN','MT','MB']){
+   const {data,error}=await sb.from('lottery_results').select('data,draw_date').eq('region',region).eq('draw_date',day).limit(100);
+   if(error){out.textContent+=region+': ⚠️ Lỗi truy vấn: '+error.message+'\\n';continue}
+   const draws=(data||[]).flatMap(row=>collect(row.data));
+   if(!draws.length){
+    const state=minutes<start[region]?'⏳ Chưa đến giờ quay':minutes<start[region]+90?'⏳ Chưa nhận kết quả (đang trong giờ quay)':'🚨 Chưa có kết quả sau giờ quay';
+    out.textContent+=region+': '+state+'\\n';continue;
+   }
+   let complete=0,partial=0,invalid=0;
+   const widths=region==='MB'?{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}:{g8:2,g7:3,g6:4,g5:4,g4:5,g3:5,g2:5,g1:5,db:6};
+   for(const prizeSet of draws){
+    const normalized={};
+    for(const [key,v] of Object.entries(prizeSet)){
+     let k=key.toLowerCase().replace(/[^a-z0-9]/g,'');if(k==='special'||k==='dacbiet')k='db';
+     if(Object.hasOwn(limits[region],k))normalized[k]=Array.isArray(v)?v:[v];
+    }
+    let ok=true;
+    for(const [k,n] of Object.entries(limits[region])){
+     const vals=normalized[k]||[];
+     if(vals.length!==n)ok=false;
+     if(vals.some(x=>!new RegExp('^\\\\d{'+widths[k]+'}
+ const btn=document.getElementById('auditRun'),status=document.getElementById('auditStatus'),out=document.getElementById('auditResult');
+ const {data:auth,error:authError}=await sb.auth.getUser();
+ if(authError||!auth?.user||!(await isAdmin(auth.user))){status.textContent='Không có quyền quản trị.';return}
+ btn.disabled=true;out.textContent='';
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const val=k=>parts.find(x=>x.type===k)?.value;
+ const today=val('year')+'-'+val('month')+'-'+val('day');
+ const add=(date,n)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+ const maxes={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
+ try{
+  // Đối chiếu một ngày gần đây bằng API công khai trước khi tin vào số liệu RLS.
+  const checkDay=add(today,-1);
+  const probe=await fetch(SUPABASE_URL+'/rest/v1/lottery_results?select=region,draw_date&region=eq.MB&draw_date=eq.'+checkDay+'&limit=1',{headers:{apikey:SUPABASE_ANON_KEY,Accept:'application/json'},cache:'no-store'});
+  const publicRows=probe.ok?await probe.json():null;
+  const authProbe=await sb.from('lottery_results').select('region,draw_date').eq('region','MB').eq('draw_date',checkDay).limit(1);
+  if(authProbe.error){status.textContent='Không đọc được bảng lottery_results: '+authProbe.error.message;return}
+  if(Array.isArray(publicRows)&&publicRows.length>0&&(authProbe.data||[]).length===0){status.textContent='Cảnh báo RLS: API công khai có dữ liệu '+checkDay+' nhưng phiên Admin không thấy. Dừng kiểm toán để tránh báo thiếu giả.';return}
+  if(!probe.ok){out.textContent='Chưa đối chiếu được API công khai (HTTP '+probe.status+'). Kết quả bên dưới chỉ phản ánh quyền đọc hiện tại.\n'}
+  else if(Array.isArray(publicRows)&&publicRows.length===0&&(authProbe.data||[]).length===0){out.textContent='Lưu ý: Cả hai cách đọc đều chưa thấy MB ngày '+checkDay+'. Không thể xác minh RLS bằng ngày này.\n'}
+  for(const region of ['MN','MT','MB']){
+   const found=new Set(),missing=[],incomplete=[],errors=[],seen=new Set();
+   for(let offset=0;offset<365;offset+=7){
+    const from=add(today,-Math.min(offset+6,364)),to=add(today,-offset);
+    status.textContent='Đang kiểm tra '+region+' · '+from+' đến '+to;
+    const {data,error}=await sb.from('lottery_results').select('draw_date,data').eq('region',region).gte('draw_date',from).lte('draw_date',to).limit(1000);
+    if(error){errors.push(from+': '+error.message);continue}
+    for(const row of data||[]){
+     found.add(row.draw_date);
+     const draws=[];
+     const walk=(v,province='',depth=0)=>{
+      if(depth>12||v==null)return;
+      if(typeof v==='string'&&/^[\\[{]/.test(v.trim())){try{walk(JSON.parse(v),province,depth+1)}catch(e){}return}
+      if(Array.isArray(v)){v.forEach(x=>walk(x,province,depth+1));return}
+      if(typeof v!=='object')return;
+      const prov=String(v.province||v.station||v.tinh||v.name||province||(region==='MB'?'Miền Bắc':'Không rõ đài'));
+      if(v.prizes&&typeof v.prizes==='object')draws.push({province:prov,prizes:v.prizes});
+      for(const [k,child] of Object.entries(v))if(!['prizes','province','station','tinh','name'].includes(k)&&child&&typeof child==='object')walk(child,prov,depth+1);
+     };
+     walk(row.data);
+     if(!draws.length){incomplete.push(row.draw_date+' không tìm thấy bảng giải hợp lệ');continue}
+     for(const draw of draws){
+      const id=row.draw_date+'|'+draw.province;
+      if(seen.has(id))continue;seen.add(id);
+      const lengths=region==='MB'?{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}:{g8:2,g7:3,g6:4,g5:4,g4:5,g3:5,g2:5,g1:5,db:6};
+      const normalized={};
+      for(const [key,value] of Object.entries(draw.prizes)){
+       let k=key.toLowerCase().replace(/[^a-z0-9]/g,'');
+       if(k==='special'||k==='dacbiet')k='db';
+       if(!Object.hasOwn(maxes[region],k))continue;
+       normalized[k]=Array.isArray(value)?value:[value];
+      }
+      const problems=[];
+      for(const [k,expected] of Object.entries(maxes[region])){
+       const nums=normalized[k]||[];
+       if(nums.length!==expected)problems.push(k+': '+nums.length+'/'+expected);
+       const invalid=nums.filter(n=>!new RegExp('^\\d{'+lengths[k]+'}.test(String(n).trim()));
+       if(invalid.length)problems.push(k+': '+invalid.length+' số sai độ dài/ký tự');
+      }
+      if(problems.length)incomplete.push(id+' ['+problems.join('; ')+']');
+     }
+    }
+   }
+   if(errors.length){out.textContent+=region+': Không thể kết luận thiếu ngày do '+errors.length+' lỗi truy vấn.\n'+errors.slice(0,8).join('\n')+'\n\n';continue}
+   const holidays=[],pending=[];
+   const vnHour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
+   const drawHour={MN:16,MT:17,MB:18}[region];
+   for(let i=0;i<365;i++){
+    const day=add(today,-i);
+    if(found.has(day))continue;
+    if(region==='MB'&&day>='2026-02-16'&&day<='2026-02-19'){holidays.push(day);continue}
+    if(day===today&&vnHour<drawHour){pending.push(day);continue}
+    missing.push(day);
+   }
+   out.textContent+=region+': '+missing.length+' ngày cần kiểm tra dữ liệu; '+holidays.length+' ngày nghỉ quay; '+pending.length+' ngày chưa đến giờ mở thưởng; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày cần kiểm tra: '+missing.slice(0,35).join(', ')+'\n':'')+(holidays.length?'Nghỉ Tết XSMB (không có kỳ quay): '+holidays.join(', ')+'\n':'')+(pending.length?'Chưa đến giờ mở thưởng: '+pending.join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
+  }
+  status.textContent='Hoàn thành kiểm tra chỉ đọc. Ngày chưa đọc được không đồng nghĩa dữ liệu đã mất.';
+ }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
+};
+(async()=>{const {data:{session},error}=await sb.auth.getSession();if(error){document.getElementById("adminEmail").textContent="Lỗi xác thực";showNotice(error.message);return}
+if(!session?.user){location.href="./login.html";return}
+document.getElementById("adminEmail").textContent=session.user.email||"Đã đăng nhập";
+if(!(await isAdmin(session.user))){showNotice("Chưa xác nhận được quyền Admin. Kiểm tra bảng admin_users và RLS.");return}
+document.getElementById("adminEmail").textContent="✅ Đã xác nhận quyền Admin • "+(session.user.email||"");
+document.getElementById("adminTabs").style.display="flex";
+document.getElementById("pendingPanel").classList.remove("hidden");
+await Promise.all([loadAll(),loadMembers(),loadPayments()]);})();
+</script>
+</body>
+</html>
+).test(String(n).trim()));
+       if(invalid.length)problems.push(k+': '+invalid.length+' số sai độ dài/ký tự');
+      }
+      if(problems.length)incomplete.push(id+' ['+problems.join('; ')+']');
+     }
+    }
+   }
+   if(errors.length){out.textContent+=region+': Không thể kết luận thiếu ngày do '+errors.length+' lỗi truy vấn.\n'+errors.slice(0,8).join('\n')+'\n\n';continue}
+   const holidays=[],pending=[];
+   const vnHour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));
+   const drawHour={MN:16,MT:17,MB:18}[region];
+   for(let i=0;i<365;i++){
+    const day=add(today,-i);
+    if(found.has(day))continue;
+    if(region==='MB'&&day>='2026-02-16'&&day<='2026-02-19'){holidays.push(day);continue}
+    if(day===today&&vnHour<drawHour){pending.push(day);continue}
+    missing.push(day);
+   }
+   out.textContent+=region+': '+missing.length+' ngày cần kiểm tra dữ liệu; '+holidays.length+' ngày nghỉ quay; '+pending.length+' ngày chưa đến giờ mở thưởng; '+incomplete.length+' bảng thiếu giải.\n'+(missing.length?'Ngày cần kiểm tra: '+missing.slice(0,35).join(', ')+'\n':'')+(holidays.length?'Nghỉ Tết XSMB (không có kỳ quay): '+holidays.join(', ')+'\n':'')+(pending.length?'Chưa đến giờ mở thưởng: '+pending.join(', ')+'\n':'')+(incomplete.length?'Bảng thiếu: '+incomplete.slice(0,35).join('; ')+'\n':'')+'\n';
+  }
+  status.textContent='Hoàn thành kiểm tra chỉ đọc. Ngày chưa đọc được không đồng nghĩa dữ liệu đã mất.';
+ }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
+};
+(async()=>{const {data:{session},error}=await sb.auth.getSession();if(error){document.getElementById("adminEmail").textContent="Lỗi xác thực";showNotice(error.message);return}
+if(!session?.user){location.href="./login.html";return}
+document.getElementById("adminEmail").textContent=session.user.email||"Đã đăng nhập";
+if(!(await isAdmin(session.user))){showNotice("Chưa xác nhận được quyền Admin. Kiểm tra bảng admin_users và RLS.");return}
+document.getElementById("adminEmail").textContent="✅ Đã xác nhận quyền Admin • "+(session.user.email||"");
+document.getElementById("adminTabs").style.display="flex";
+document.getElementById("pendingPanel").classList.remove("hidden");
+await Promise.all([loadAll(),loadMembers(),loadPayments()]);})();
+</script>
+</body>
+</html>
+).test(String(x).trim()))){invalid++;ok=false}
+    }
+    if(ok)complete++;else partial++;
+   }
+   const state=partial?'⚠️ Có bảng chưa đủ giải': '✅ Các bảng đọc được đều đủ giải';
+   out.textContent+=region+': '+state+' — '+complete+' bảng đủ, '+partial+' bảng chưa đủ'+(invalid?', '+invalid+' nhóm giải có số sai định dạng':'')+'\\n';
+  }
+  status.textContent='Kiểm tra xong lúc '+get('hour')+':'+get('minute')+' · '+day+'. Đây là kết quả đọc dữ liệu, không phải trạng thái VPS.';
+ }catch(e){status.textContent='Lỗi: '+String(e.message||e)}finally{btn.disabled=false}
+};
 document.getElementById('auditRun').onclick=async()=>{
  const btn=document.getElementById('auditRun'),status=document.getElementById('auditStatus'),out=document.getElementById('auditResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
