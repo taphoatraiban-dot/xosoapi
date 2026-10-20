@@ -673,7 +673,7 @@ function recordLiveTiming(rows,r,d,elapsed){
   for(const [prize,values] of Object.entries(row.prizes||{})){
    if(!Array.isArray(values))continue;
    values.forEach((value,i)=>{
-    if(!/^\\d+$/.test(String(value)))return;
+    if(!/^\d+$/.test(String(value)))return;
     const key=[r,d,row.province,prize,i].join('|');
     if(liveTimingSeen.has(key))return;
     liveTimingSeen.add(key);added++;liveLatestPrize={key,at:now,region:r,date:d,province:row.province,prize,index:i,value:String(value)};
@@ -684,7 +684,7 @@ function recordLiveTiming(rows,r,d,elapsed){
  if(liveTimingEvents.length>120)liveTimingEvents.length=120;
  const summary=$('liveTimingSummary'),list=$('liveTimingRows');
  if(summary)summary.textContent='Phiên này: '+liveTimingSeen.size+' vị trí giải đã nhận · lần tải gần nhất '+elapsed+'ms'+(added?' · mới '+added:' · chưa có giải mới');
- if(list)list.textContent=liveTimingEvents.join('\\n')||'Chưa nhận giải mới.';
+ if(list)list.textContent=liveTimingEvents.join('\n')||'Chưa nhận giải mới.';
 }
 document.getElementById('liveReferenceCompare').onclick=()=>{
  const input=$('liveReferenceTime').value,out=$('liveReferenceResult');
