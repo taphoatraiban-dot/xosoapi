@@ -742,6 +742,9 @@ setInterval(()=>{
  if(document.hidden)return;
  const phase=livePhase(region);
  // LIVE: tăng tần suất kiểm tra khi quay; tránh gửi chồng truy vấn khi mạng chậm.
+ // Không gọi LIVE liên tục ngoài 16:00–19:00; lịch sử vẫn tải bình thường.
+ const mins=vnNow().getHours()*60+vnNow().getMinutes();
+ if(mins<LIVE_START.MN||mins>=LIVE_START.MB+60)return;
  const interval=phase==='drawing'?1200:15000;
  if(liveBusy&&liveLastRegion===region&&liveLastDate===todayVN())return;
  const now=Date.now();
@@ -786,7 +789,10 @@ function audioSayNext(){
 }
 function audioEnqueue(phrases){
  if(!audioPrefs.on)return;
- audioBeep();
+ // Báo hiệu một lần cho cả đợt giải, tránh âm báo dồn liên tục.
+ if(!audioEnqueue.lastBeep||Date.now()-audioEnqueue.lastBeep>900){
+  audioBeep();audioEnqueue.lastBeep=Date.now();
+ }
  if(audioPrefs.voice&&audioSupported){
   // Hạn chế hàng đợi dài khi kết quả về nhanh: giữ tối đa 30 thông báo.
   audioQueue.push(...phrases.slice(0,30));if(audioQueue.length>30)audioQueue=audioQueue.slice(-30);
