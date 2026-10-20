@@ -670,8 +670,9 @@ setInterval(()=>{
  autoSwitch();
  if(document.hidden)return;
  const phase=livePhase(region);
- // Trong giờ quay kiểm tra 1,8 giây/lần; ngoài giờ quay 15 giây/lần.
- const interval=phase==='drawing'?1800:15000;
+ // LIVE: tăng tần suất kiểm tra khi quay; tránh gửi chồng truy vấn khi mạng chậm.
+ const interval=phase==='drawing'?1200:15000;
+ if(liveBusy&&liveLastRegion===region&&liveLastDate===todayVN())return;
  const now=Date.now();
  if(now-lastLivePollAt<interval)return;
  lastLivePollAt=now;
