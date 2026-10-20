@@ -1,0 +1,40 @@
+name: XOSOAPI static smoke checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  check-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify HTML and inline JavaScript syntax
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm');
+          const files=['index.html','thong-ke-2-so.html','thong-ke-3-so.html','thong-ke-4-so.html'];
+          let failures=0;
+          for(const file of files){
+            if(!fs.existsSync(file)){console.error('MISSING',file);failures++;continue}
+            const html=fs.readFileSync(file,'utf8');
+            const opens=(html.match(/<script\b[^>]*>/gi)||[]);
+            const closes=(html.match(/<\/script\s*>/gi)||[]);
+            const htmlEnds=(html.match(/<\/html\s*>/gi)||[]);
+            if(opens.length!==closes.length||htmlEnds.length!==1){console.error('HTML STRUCTURE FAIL',file);failures++}
+            let checked=0;
+            const re=/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+            for(const match of html.matchAll(re)){
+              if(/\bsrc\s*=/.test(match[1])||!match[2].trim())continue;
+              if(/\btype\s*=\s*["'](?:application\/json|importmap)/i.test(match[1]))continue;
+              try{new vm.Script(match[2],{filename:file+'#script'+(++checked)})}
+              catch(e){console.error('JS SYNTAX FAIL',file,e.message);failures++}
+            }
+            console.log(file,'scripts checked:',checked,'HTML endings:',htmlEnds.length);
+          }
+          if(failures)process.exit(1);
+          NODE
