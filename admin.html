@@ -142,6 +142,16 @@ document.getElementById("accountSearch").oninput=e=>{let q=e.target.value.toLowe
 async function loadPayments(){const el=document.getElementById('paymentList'),msg=document.getElementById('paymentNotice');msg.textContent='Đang tải đơn...';const r=await sb.rpc('ott_admin_orders');if(r.error){msg.textContent='Lỗi: '+r.error.message;return}const rows=r.data||[];msg.textContent='Có '+rows.filter(x=>x.status==='pending').length+' đơn chờ duyệt / '+rows.length+' đơn gần nhất.';el.innerHTML=rows.map(x=>`<div class="order"><div class="grid"><div><div class="label">Mã đơn</div><div class="value">OTT${esc(x.id)}</div></div><div><div class="label">Email</div><div class="value">${esc(x.email||x.user_id)}</div></div><div><div class="label">Số tiền</div><div class="value">${fmt(x.amount_vnd)}đ</div></div><div><div class="label">Trạng thái</div><div class="value">${esc(x.status)}</div></div><div><div class="label">Ngày tạo</div><div class="value">${fmtDate(x.created_at)}</div></div><div><div class="label">Thời hạn</div><div class="value">${esc(x.duration_days)} ngày</div></div></div>${x.status==='pending'?`<div class="actions"><button class="btn green paymentAction" data-id="${x.id}" data-approve="true">Đã nhận tiền · Duyệt +30 ngày</button><button class="btn red paymentAction" data-id="${x.id}" data-approve="false">Từ chối</button></div>`:''}</div>`).join('')||'<div class="empty">Chưa có đơn</div>';el.querySelectorAll('.paymentAction').forEach(b=>b.onclick=async()=>{const ok=b.dataset.approve==='true',id=Number(b.dataset.id);if(!confirm(ok?'ĐÃ KIỂM TRA VPBank nhận đủ 49.000đ cho mã OTT'+id+'?':'Từ chối đơn OTT'+id+'?'))return;b.disabled=true;const r=await sb.rpc('ott_admin_review',{p_order_id:id,p_approve:ok});if(r.error){msg.textContent='Lỗi duyệt: '+r.error.message;b.disabled=false;return}await loadPayments()})}
 document.getElementById('paymentRefresh').onclick=loadPayments;
 
+// Tự kiểm tra khi mở tab giám sát; không chạy khi tab ẩn và không ghi dữ liệu.
+let healthLastRun=0;
+function triggerHealthCheck(force=false){
+ const panel=document.getElementById('healthPanel'),btn=document.getElementById('healthRun');
+ if(!panel||panel.classList.contains('hidden')||!btn||btn.disabled||document.hidden)return;
+ if(!force&&Date.now()-healthLastRun<60000)return;
+ healthLastRun=Date.now();btn.click();
+}
+document.querySelector('[data-tab="health"]')?.addEventListener('click',()=>setTimeout(()=>triggerHealthCheck(true),150));
+setInterval(()=>triggerHealthCheck(),60000);
 document.getElementById('healthRun').onclick=async()=>{
  const btn=document.getElementById('healthRun'),status=document.getElementById('healthStatus'),out=document.getElementById('healthResult');
  const {data:auth,error:authError}=await sb.auth.getUser();
