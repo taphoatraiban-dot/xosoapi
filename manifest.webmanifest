@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "XOSOAPI - Kết quả xổ số 3 miền",
+  "short_name": "XOSOAPI",
+  "description": "Tra cứu kết quả xổ số Miền Nam, Miền Trung, Miền Bắc",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b90016",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "./pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
