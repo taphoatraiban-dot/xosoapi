@@ -661,7 +661,18 @@ drawer.addEventListener('click',e=>{const toggle=e.target.closest('[data-group]'
 const weekday=e.target.closest('[data-menu-day]');if(weekday){setDrawer(false);setRegion(weekday.dataset.menuRegion,false);const selected=Number(weekday.dataset.menuDay),now=todayVN();const offset=(vnWeekday(now)-selected+7)%7;const date=addDays(now,-offset);setTimeout(()=>document.getElementById('day-'+date)?.scrollIntoView({behavior:'smooth'}),450);return}
 const live=e.target.closest('[data-live-region]');if(live){setDrawer(false);setRegion(live.dataset.liveRegion,false);setTimeout(()=>document.getElementById('liveResults').scrollIntoView({behavior:'smooth'}),400)}});
 
-$('scheduleText').innerHTML=Object.entries({1:'Thứ 2',2:'Thứ 3',3:'Thứ 4',4:'Thứ 5',5:'Thứ 6',6:'Thứ 7',0:'Chủ nhật'}).map(([d,n])=>'<p><b>'+n+':</b> '+SCHEDULE.MN[Number(d)].join(', ')+'</p>').join('');weekNavigation();render();updateLive();autoSwitch();let autoLoading=false;const observer=new IntersectionObserver(entries=>{if(!entries.some(x=>x.isIntersecting)||autoLoading||numDays>=28)return;autoLoading=true;setTimeout(()=>{if(numDays<28){numDays+=7;render()}autoLoading=false},250)},{rootMargin:'300px'});observer.observe(document.querySelector('.toolbar'));setInterval(()=>{autoSwitch();if(!document.hidden)updateLive()},1800);setInterval(()=>{if(!document.hidden)decorateLive()},1200);setInterval(()=>{if(!document.hidden)tickLiveDigits()},120);
+$('scheduleText').innerHTML=Object.entries({1:'Thứ 2',2:'Thứ 3',3:'Thứ 4',4:'Thứ 5',5:'Thứ 6',6:'Thứ 7',0:'Chủ nhật'}).map(([d,n])=>'<p><b>'+n+':</b> '+SCHEDULE.MN[Number(d)].join(', ')+'</p>').join('');weekNavigation();render();updateLive();autoSwitch();let autoLoading=false;const observer=new IntersectionObserver(entries=>{if(!entries.some(x=>x.isIntersecting)||autoLoading||numDays>=28)return;autoLoading=true;setTimeout(()=>{if(numDays<28){numDays+=7;render()}autoLoading=false},250)},{rootMargin:'300px'});observer.observe(document.querySelector('.toolbar'));let lastLivePollAt=0;
+setInterval(()=>{
+ autoSwitch();
+ if(document.hidden)return;
+ const phase=livePhase(region);
+ // Trong giờ quay kiểm tra 1,8 giây/lần; ngoài giờ quay 15 giây/lần.
+ const interval=phase==='drawing'?1800:15000;
+ const now=Date.now();
+ if(now-lastLivePollAt<interval)return;
+ lastLivePollAt=now;
+ updateLive();
+},900);setInterval(()=>{if(!document.hidden)decorateLive()},1200);setInterval(()=>{if(!document.hidden)tickLiveDigits()},120);
 
 // AUDIO LIVE: Chỉ phát khi người dùng đã bật loa và API có số MỚI thực tế.
 // Không phát âm thanh cho số đang quay mô phỏng, không đọc lại khi tải trang hoặc đổi miền.
