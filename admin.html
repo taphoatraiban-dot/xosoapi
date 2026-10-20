@@ -263,7 +263,7 @@ document.getElementById('auditRun').onclick=async()=>{
       for(const [k,expected] of Object.entries(maxes[region])){
        const nums=normalized[k]||[];
        if(nums.length!==expected)problems.push(k+': '+nums.length+'/'+expected);
-       const invalid=nums.filter(n=>!new RegExp('^\\d{'+lengths[k]+'});
+       const invalid=nums.filter(n=>!new RegExp('^\\d{'+lengths[k]+'}$').test(String(n).trim()));
        if(invalid.length)problems.push(k+': '+invalid.length+' số sai độ dài/ký tự');
       }
       if(problems.length)incomplete.push(id+' ['+problems.join('; ')+']');
