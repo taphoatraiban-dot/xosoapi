@@ -719,6 +719,18 @@ function checkLiveStall(){
 setInterval(checkLiveStall,5000);
 let liveFailures=0,liveLastReceivedAt=0;
 function liveConnectionStatus(message,warning=false){const el=$('liveConnection');if(!el)return;el.textContent=message;el.style.background=warning?'#fff3df':'#edf8f0';el.style.color=warning?'#874c00':'#166534'}
+async function getLiveFallback(r,d){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8500);
+ try{
+  const url='https://zigpqddlhvjbjrwhfhaa.supabase.co/functions/v1/xosoapi?region='+encodeURIComponent(r)+'&date='+encodeURIComponent(d);
+  const res=await fetch(url,{headers:{apikey:PUBLIC_KEY,Accept:'application/json'},signal:controller.signal,cache:'no-store'});
+  if(!res.ok)throw new Error('Edge HTTP '+res.status);
+  const payload=await res.json();
+  if(payload.success!==true||payload.region!==r||payload.date!==d||!Array.isArray(payload.data))throw new Error('Nguồn dự phòng không khớp miền/ngày');
+  const draws=extractDraws(payload.data,r,d);
+  return draws.filter(x=>x.date===d&&x.province&&x.prizes&&typeof x.prizes==='object');
+ }finally{clearTimeout(timer)}
+}
 async function updateLive(){
  const r=region,d=todayVN();
  // Cho phép tải ngay khi đổi miền/ngày; chỉ chặn yêu cầu trùng miền đang chạy.
@@ -732,7 +744,13 @@ async function updateLive(){
  liveBusy=true;
  try{
   const requestStarted=performance.now();
-  const all=await getRows(r,d,d,true);
+  let all,liveSource='Supabase';
+  try{all=await getRows(r,d,d,true)}
+  catch(primaryError){
+   console.warn('LIVE: nguồn chính lỗi, thử Edge API',primaryError);
+   all=await getLiveFallback(r,d);
+   liveSource='Edge dự phòng';
+  }
   if(seq!==liveRefreshSeq||r!==region||d!==todayVN())return;
   const expected=liveStations(r,d);
   const incoming=sortStations(all.filter(x=>x.date===d),d,r); // Không bỏ kết quả thật chỉ vì tên đài khác lịch.
@@ -741,7 +759,7 @@ async function updateLive(){
   recordLiveTiming(rows,r,d,Math.round(performance.now()-requestStarted));
   if(liveTimingSeen.size>prizeCountBefore){liveLastPrizeAt=Date.now();liveLastPrizeRegion=r;liveLastPrizeDate=d;}
   liveLastSuccess=Date.now();liveLastReceivedAt=liveLastSuccess;liveFailures=0;
-  liveConnectionStatus("LIVE: đã kết nối · nhận dữ liệu lúc "+new Date(liveLastReceivedAt).toLocaleTimeString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"}));
+  liveConnectionStatus("LIVE: "+liveSource+" · nhận dữ liệu lúc "+new Date(liveLastReceivedAt).toLocaleTimeString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"}));
   const signature=JSON.stringify(rows.map(x=>[x.province,x.prizes]));
   if(signature!==liveLastSignature){
    audioObserveLive(rows,r,d);
