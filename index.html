@@ -463,7 +463,7 @@ function heads(rows){
 }
 function section(date,rows){rows=sortStations(rows,date,region);const label=CODES[region]+' · '+days[vnWeekday(date)]+' · '+dateText(date);return '<section class="day" id="day-'+date+'"><div class="top-label">'+safe(label)+'</div><div class="subheader">'+CODES[region]+' ngày '+dateText(date)+'</div>'+(rows.length? prizeTable(rows)+'<div class="mode"><label><input type="radio" name="mode-'+date+'" data-mode="full" '+(mode==='full'?'checked':'')+'> Đầy đủ</label><label><input type="radio" name="mode-'+date+'" data-mode="2" '+(mode==='2'?'checked':'')+'> 2 số</label><label><input type="radio" name="mode-'+date+'" data-mode="3" '+(mode==='3'?'checked':'')+'> 3 số</label></div>'+heads(rows):'<div class="message">Chưa có dữ liệu ngày này. Không hiển thị số giả.</div>')+'</section>'}
 function weekNavigation(){const arr=['Miền','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','CN'];$('weekNav').innerHTML=arr.map((x,i)=>'<button data-week="'+i+'"'+(i===0?' class="active"':'')+'>'+x+'</button>').join('');}
-async function render(){const token=++generation;const to=todayVN(),from=addDays(to,-numDays+1);$('topLabel').textContent=CODES[region]+' – Xổ số '+NAMES[region];$('history').innerHTML='<div class="loading">Đang tải lịch sử '+NAMES[region]+'…</div>';try{const rows=await getRows(region,from,to);if(token!==generation)return;let sections='';for(let i=0;i<numDays;i++){const d=addDays(to,-i);if(i%7===0)sections+='<div class="week-title">'+(i===0?'7 ngày gần nhất':'Tuần trước · '+dateText(d))+'</div>';const expected=(SCHEDULE[region]||[])[vnWeekday(d)]||[];const dayRows=rows.filter(x=>x.date===d&&(region==='MB'||expected.some(p=>normProvince(p)===normProvince(x.province))));sections+=section(d,dayRows)}$('history').innerHTML=sections;renderTodayStations();}catch(e){if(token===generation)$('history').innerHTML='<div class="message">Không tải được dữ liệu từ Supabase ('+safe(e.message)+'). Hãy thử lại khi có kết nối.</div>'}}
+async function render(){const token=++generation;const to=todayVN(),from=addDays(to,-numDays+1);$('topLabel').textContent=CODES[region]+' – Xổ số '+NAMES[region];$('history').innerHTML='<div class="loading">Đang tải lịch sử '+NAMES[region]+'…</div>';try{const rows=await getRows(region,from,to);if(token!==generation)return;let sections='';for(let i=0;i<numDays;i++){const d=addDays(to,-i);if(i%7===0)sections+='<div class="week-title">'+(i===0?'7 ngày gần nhất':'Tuần trước · '+dateText(d))+'</div>';const expected=(SCHEDULE[region]||[])[vnWeekday(d)]||[];const dayRows=rows.filter(x=>x.date===d); // API là nguồn xác thực; lịch đài chỉ dùng để sắp xếp.sections+=section(d,dayRows)}$('history').innerHTML=sections;renderTodayStations();}catch(e){if(token===generation)$('history').innerHTML='<div class="message">Không tải được dữ liệu từ Supabase ('+safe(e.message)+'). Hãy thử lại khi có kết nối.</div>'}}
 function setRegion(r,shouldScroll=true,automatic=false){
   if(!automatic)userSelectedRegion=true;
  if(!['MN','MT','MB'].includes(r))return;
@@ -493,9 +493,10 @@ const LIVE_PRIZE_COUNTS={MN:{g8:1,g7:1,g6:3,g5:1,g4:7,g3:2,g2:1,g1:1,db:1},MT:{g
 function liveStations(r,d){return r==='MB'?['Miền Bắc']:((SCHEDULE[r]||[])[vnWeekday(d)]||[])}
 function liveTable(r,d,verified=[],waiting='Đang chờ'){
  const stations=liveStations(r,d),counts=LIVE_PRIZE_COUNTS[r];
- const draws=stations.map(station=>verified.find(row=>r==='MB'||normProvince(row.province)===normProvince(station))||null);
+ const displayStations=r==='MB'?stations:[...stations,...verified.map(x=>x.province).filter(name=>!stations.some(station=>normProvince(station)===normProvince(name)))];
+ const draws=displayStations.map(station=>verified.find(row=>r==='MB'||normProvince(row.province)===normProvince(station))||null);
  const keys=Object.keys(counts);
- const head='<thead><tr><th>Giải</th>'+stations.map(station=>'<th>'+safe(station)+'</th>').join('')+'</tr></thead>';
+ const head='<thead><tr><th>Giải</th>'+displayStations.map(station=>'<th>'+safe(station)+'</th>').join('')+'</tr></thead>';
  const cellContent=(row,k,i)=>{
   const value=row?.prizes?.[k]?.[i];
   const isNumber=value!==undefined&&value!==null&&/^\d{2,6}$/.test(String(value));
@@ -613,7 +614,7 @@ async function updateLive(){
   const all=await getRows(r,d,d,true);
   if(seq!==liveRefreshSeq||r!==region||d!==todayVN())return;
   const expected=liveStations(r,d);
-  const incoming=sortStations(all.filter(x=>x.date===d&&(r==='MB'||expected.some(p=>normProvince(p)===normProvince(x.province)))),d,r);
+  const incoming=sortStations(all.filter(x=>x.date===d),d,r); // Không bỏ kết quả thật chỉ vì tên đài khác lịch.
   const rows=sortStations(retainConfirmedLive(incoming,r,d),d,r);
   liveLastSuccess=Date.now();
   const signature=JSON.stringify(rows.map(x=>[x.province,x.prizes]));
