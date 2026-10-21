@@ -672,7 +672,7 @@ function decorateLive(){
  currentRollingSlots=rolling;
 }
 function liveDigitWidth(prize){
- return region==='MB'&&prize==='g7'?2:region==='MB'&&prize==='g6'?3:region==='MB'&&['g4','g5'].includes(prize)?4:region==='MB'?5:LIVE_DIGITS[prize]||5;
+ return livePrizeDigits(region,prize);
 }
 let lastDigitTick=0,liveDigitStep=0;
 function tickLiveDigits(){
