@@ -683,9 +683,9 @@ function tickLiveDigits(){
    for(const prize of LIVE_DRAW_ORDER.MB){target=pending.find(x=>x.dataset.prize===prize);if(target)break}
    for(const cell of pending){
     const rolling=cell===target;
-    cell.classList.toggle('live-rolling-cell',rolling);
+    if(cell.classList.contains('live-rolling-cell')!==rolling)cell.classList.toggle('live-rolling-cell',rolling);
     const label=cell.querySelector('.live-wait-anim');
-    if(label&&!rolling&&/^\d+$/.test(label.textContent))label.textContent='Đang chờ';
+    if(label&&!rolling&&/^\d+$/.test(label.textContent)){label.textContent='Đang chờ';label.removeAttribute('aria-label')}
    }
    currentRollingSlots=target?[target]:[];
    el.classList.add('live-is-drawing');
