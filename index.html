@@ -582,7 +582,7 @@ function liveTable(r,d,verified=[],waiting='Đang chờ'){
  const head='<thead><tr><th>Giải</th>'+displayStations.map(station=>'<th>'+safe(station)+'</th>').join('')+'</tr></thead>';
  const cellContent=(row,k,i)=>{
   const value=row?.prizes?.[k]?.[i];
-  const isNumber=value!==undefined&&value!==null&&/^\d{2,6}$/.test(String(value));
+  const isNumber=value!==undefined&&value!==null&&/^\d+$/.test(String(value))&&String(value).length===livePrizeDigits(r,k);
   return isNumber?'<span class="live-verified '+(k==='db'?'db':'')+'">'+safe(String(value))+'</span>':'<span class="live-pending-cell" data-prize="'+k+'" data-slot="'+i+'"><span class="live-wait-anim">Chờ quay</span></span>';
  };
  let body;
@@ -602,6 +602,7 @@ function pendingLiveTable(r,d,message){return liveTable(r,d,[],message||'Đang c
 // LIVE nhanh: giữ bảng trên màn hình, chỉ thay DOM khi số thực thay đổi.
 let liveRefreshSeq=0,liveBusy=false,liveLastSignature='',liveLastRegion='',liveLastDate='';
 let liveConfirmed=new Map(),liveLastSuccess=0;
+function livePrizeDigits(r,prize){if(r==='MB')return prize==='g7'?2:prize==='g6'?3:['g4','g5'].includes(prize)?4:5;return prize==='g8'?2:prize==='g7'?3:['g6','g5'].includes(prize)?4:prize==='db'?6:5}
 function retainConfirmedLive(rows,r,d){
  const key=r+'|'+d;
  if(!liveConfirmed.has(key))liveConfirmed.set(key,new Map());
@@ -616,7 +617,8 @@ function retainConfirmedLive(rows,r,d){
    const previous=old.prizes[prize]||[];
    const merged=previous.slice();
    values.forEach((n,i)=>{
-    if(!/^\d+$/.test(String(n)))return;
+    const digits=String(n);
+    if(!/^\d+$/.test(digits)||digits.length!==livePrizeDigits(r,prize))return;
     if(i>=Number(LIVE_PRIZE_COUNTS[r]?.[prize]||0))return;
     if(merged[i]==null)merged[i]=String(n);
     else if(merged[i]!==String(n))console.warn('LIVE: kết quả mâu thuẫn, giữ số đã nhận',id,prize,i);
