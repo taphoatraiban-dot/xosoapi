@@ -938,10 +938,10 @@ function autoSwitch(){
  else if(mins>=LIVE_START.MN&&mins<LIVE_START.MN+60)active='MN';
  if(!active)return;
  const phase=day+'|'+active;
- if(lastAutoPhase===phase)return;
- lastAutoPhase=phase;
  // Giữ lựa chọn miền thủ công trong ngày, tự động trở lại từ ngày kế tiếp.
  if(userSelectedRegion&&lastManualRegionDay===day)return;
+ if(lastAutoPhase===phase)return;
+ lastAutoPhase=phase;
  userSelectedRegion=false;
  if(region!==active)setRegion(active,false,true);
  else updateLive();
