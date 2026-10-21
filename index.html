@@ -794,6 +794,7 @@ function compareLiveSources(a,b,r,d){
  return conflicts;
 }
 let liveSourceLastCompare=0;
+let liveLastHistoryRenderAt=0;
 async function updateLive(){
  const r=region,d=todayVN();
  // Cho phép tải ngay khi đổi miền/ngày; chỉ chặn yêu cầu trùng miền đang chạy.
@@ -852,7 +853,7 @@ async function updateLive(){
    // Làm mới bảng lịch sử đang xem khi LIVE có số mới, tránh hiển thị dữ liệu cũ.
    if(r===region&&d===todayVN()&&!document.hidden){
     // Chỉ làm mới lịch sử khi có số thật, tránh render lặp lúc chuyển trạng thái chờ.
-    if(rows.some(row=>Object.values(row.prizes||{}).some(nums=>Array.isArray(nums)&&nums.length)))render();
+    if(rows.some(row=>Object.values(row.prizes||{}).some(nums=>Array.isArray(nums)&&nums.length))&&Date.now()-liveLastHistoryRenderAt>=5000){liveLastHistoryRenderAt=Date.now();render()}
    }
    el.innerHTML=liveTable(r,d,rows,liveWaiting(r));
    currentRollingSlots=[];decorateLive();
