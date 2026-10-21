@@ -794,7 +794,7 @@ function compareLiveSources(a,b,r,d){
  return conflicts;
 }
 let liveSourceLastCompare=0;
-let liveLastHistoryRenderAt=0,liveHistoryRenderTimer=null;
+let liveLastHistoryRenderAt=0,liveHistoryRenderTimer=null,liveHistoryRenderContext='';
 async function updateLive(){
  const r=region,d=todayVN();
  // Cho phép tải ngay khi đổi miền/ngày; chỉ chặn yêu cầu trùng miền đang chạy.
@@ -802,6 +802,8 @@ async function updateLive(){
  const seq=++liveRefreshSeq;
  const el=$('liveResults');if(!el)return;
  if(liveLastRegion!==r||liveLastDate!==d||!el.querySelector('table')){
+  if(liveHistoryRenderTimer){clearTimeout(liveHistoryRenderTimer);liveHistoryRenderTimer=null}
+  liveHistoryRenderContext='';liveLastHistoryRenderAt=0;
   liveLastSignature='';liveLastRegion=r;liveLastDate=d;
   el.innerHTML=pendingLiveTable(r,d,liveWaiting(r));currentRollingSlots=[];decorateLive();
  }
@@ -860,9 +862,10 @@ async function updateLive(){
       render();
      }else if(!liveHistoryRenderTimer){
       // Đảm bảo giải cuối vẫn xuất hiện ở bảng lịch sử ngay cả khi LIVE ngừng cập nhật.
+      liveHistoryRenderContext=r+'|'+d;
       liveHistoryRenderTimer=setTimeout(()=>{
        liveHistoryRenderTimer=null;
-       if(!document.hidden&&region===r&&todayVN()===d){liveLastHistoryRenderAt=Date.now();render()}
+       if(!document.hidden&&region===r&&todayVN()===d&&liveHistoryRenderContext===r+'|'+d){liveLastHistoryRenderAt=Date.now();render()}
       },Math.max(0,5000-(Date.now()-liveLastHistoryRenderAt)));
      }
     }
