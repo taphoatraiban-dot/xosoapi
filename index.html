@@ -913,7 +913,7 @@ function updateLiveProgress(){
  if(mins<start)label.textContent=r+' · Còn '+clock(remaining)+' đến giờ mở thưởng';
  else label.textContent=r+' · Đã nhận '+received+'/'+expected+' giải ('+(expected?Math.round(received/expected*100):0)+'%)';
  bar.style.width=(expected?received/expected*100:0)+'%';
- detail.textContent='Khung giờ '+String(start/60).padStart(2,'0')+':00 · '+stations.length+' đài · '+(received===expected&&expected?'Đã đủ giải':mins>=start?'Đang theo dõi kết quả':'Chờ mở thưởng');
+ detail.textContent='Khung giờ '+String(start/60).padStart(2,'0')+':00 · '+stations.length+' đài · '+(received===expected&&expected?'Đã đủ giải':mins<start?'Chờ mở thưởng':livePhase(r)==='drawing'?'Đang theo dõi kết quả':'Chờ cập nhật kết quả còn thiếu');
 }
 setInterval(updateLiveProgress,1000);
 function updateLiveVisibility(){
