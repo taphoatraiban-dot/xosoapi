@@ -33,7 +33,7 @@ h1,h2,h3{margin:0 0 10px}.muted{color:var(--muted)}.plans{display:grid;grid-temp
 <header class="top"><div class="brand"><div class="logo">✦</div>XOSOAPI</div><a class="btn" href="./dashboard.html">Dashboard</a></header>
 <main class="wrap">
 <section class="card">
-<h1>Nâng cấp gói</h1>
+<h1>Bảng giá API xổ số 3 miền</h1><p class="muted">Chọn gói, thanh toán chuyển khoản và gửi yêu cầu kích hoạt hoặc gia hạn. Quyền chỉ được cấp sau khi quản trị viên xác nhận.</p><p><a class="btn" href="./api-docs.html">Tài liệu API &amp; dùng thử</a> <a class="btn" href="./dashboard.html">API key &amp; lượt gọi</a></p>
 <div class="muted" id="userEmail">Đang kiểm tra tài khoản...</div>
 <div class="plans">
   <div class="plan" data-code="basic" data-price="99000" data-limit="2000">
@@ -62,6 +62,7 @@ h1,h2,h3{margin:0 0 10px}.muted{color:var(--muted)}.plans{display:grid;grid-temp
 </div>
 </section>
 
+<section class="card"><h2>Dùng thử API</h2><p class="muted">Hệ thống có gói dùng thử giới hạn 500 request/ngày và 30 request/phút. Đăng nhập để kiểm tra quyền dùng thử, API key và số lượt gọi còn lại trên Dashboard.</p><p><a class="btn" href="./login.html">Đăng ký / đăng nhập</a> <a class="btn" href="./api-docs.html">Thử endpoint công khai</a></p></section>
 <section class="card">
 <h2>Đơn hàng</h2>
 <div class="summary">
@@ -73,7 +74,7 @@ h1,h2,h3{margin:0 0 10px}.muted{color:var(--muted)}.plans{display:grid;grid-temp
 </section>
 
 <section class="card">
-<h2>Thanh toán chuyển khoản</h2>
+<h2>Thanh toán và gia hạn bằng chuyển khoản</h2><p class="muted">Hệ thống ghi nhận yêu cầu, không tự xác nhận đã nhận tiền. Admin kiểm tra giao dịch trước khi cấp quyền.</p>
 <div class="paybox">
   <div class="qr" id="qrBox">
     <div class="placeholder">CHƯA CẤU HÌNH QR<br><small>Điền thông tin ngân hàng trong file pricing.html</small></div>
