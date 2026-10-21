@@ -38,3 +38,28 @@ jobs:
           }
           if(failures)process.exit(1);
           NODE
+      - name: Verify live, statistics and SEO invariants
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const home=fs.readFileSync('index.html','utf8');
+          const map=fs.readFileSync('sitemap.xml','utf8');
+          const ads=fs.readFileSync('ads.txt','utf8').trim();
+          const assert=(condition,message)=>{if(!condition)throw Error(message)};
+          assert(/LIVE_DRAW_ORDER=/.test(home),'Missing LIVE prize order');
+          assert(/MB:\['g1','g2','g3','g4','g5','g6','g7','db'\]/.test(home),'MB rolling order must begin at G1');
+          assert(home.includes("replace(/[đĐ]/g,'d')"),'Missing Dak Lak diacritic normalization');
+          assert(home.includes("const displayStations=stations"),'LIVE must not add unscheduled station columns');
+          assert(home.includes("data-live-station"),'Missing stable station selector');
+          assert(home.includes("live-mb-grid .live-pending-cell"),'Missing MB rolling target selector');
+          for(const page of ['thong-ke-2-so.html','thong-ke-3-so.html','thong-ke-4-so.html']){
+            assert(fs.existsSync(page),'Missing statistics page '+page);
+            assert(map.includes('https://xosothantaiapi.info/'+page),'Statistics page missing from sitemap: '+page);
+            const html=fs.readFileSync(page,'utf8');
+            assert(html.includes('365'),'365-day option missing from '+page);
+            assert(/lottery_results/.test(html),'Statistics API missing from '+page);
+          }
+          assert(ads==='google.com, pub-8504828724795234, DIRECT, f08c47fec0942fa0','ads.txt publisher line mismatch');
+          console.log('LIVE selectors, statistics pages, sitemap and ads.txt checks passed');
+          NODE
