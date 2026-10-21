@@ -629,7 +629,7 @@ function retainConfirmedLive(rows,r,d){
  return [...saved.values()];
 }
 function livePhase(r){const n=vnNow(),m=n.getHours()*60+n.getMinutes();return m<LIVE_START[r]?'before':m<LIVE_START[r]+75?'drawing':'after'}
-function liveWaiting(r){return livePhase(r)==='before'?'Chờ mở thưởng':'Đang quay'}
+function liveWaiting(r){const phase=livePhase(r);return phase==='before'?'Chờ mở thưởng':phase==='drawing'?'Đang quay':'Chờ cập nhật'}
 // Hai trạng thái: ô đang quay hiển thị số chạy mô phỏng; ô chưa đến lượt xoay mũi tên.
 // Không bao giờ lưu số mô phỏng hoặc coi đó là kết quả thật.
 const LIVE_DRAW_ORDER={MN:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MT:['g8','g7','g6','g5','g4','g3','g2','g1','db'],MB:['g1','g2','g3','g4','g5','g6','g7','db']};
@@ -665,8 +665,8 @@ function decorateLive(){
   if(isRolling){
    if(changed||!/^\d+$/.test(span.textContent))span.textContent='0'.repeat(liveDigitWidth(slot.dataset.prize));
    span.setAttribute('aria-label','Số đang quay mô phỏng');
-  }else if(changed||span.textContent!==(active?'Đang chờ':'Chờ quay')){
-   span.textContent=active?'Đang chờ':'Chờ quay';span.removeAttribute('aria-label');
+  }else if(changed||span.textContent!==(active?'Đang chờ':livePhase(region)==='after'?'Chờ cập nhật':'Chờ quay')){
+   span.textContent=active?'Đang chờ':livePhase(region)==='after'?'Chờ cập nhật':'Chờ quay';span.removeAttribute('aria-label');
   }
  });
  currentRollingSlots=rolling;
