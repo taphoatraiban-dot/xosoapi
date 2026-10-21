@@ -479,7 +479,7 @@ function extractDraws(value,region,date){
 const PUBLIC_KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
 const NAMES={MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc'},CODES={MN:'XSMN',MT:'XSMT',MB:'XSMB'},PRIZES={g8:'G8',g7:'G7',g6:'G6',g5:'G5',g4:'G4',g3:'G3',g2:'G2',g1:'G1',db:'ĐB'};
 let region='MN',numDays=7,cache=new Map(),generation=0,liveInterval=null,mode='full';
-let userSelectedRegion=false, lastAutoPhase='';
+let userSelectedRegion=false, lastManualRegionDay='', lastAutoPhase='';
 function vnNow(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Ho_Chi_Minh'}))}
 function dayStr(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
 function todayVN(){return dayStr(vnNow())}
@@ -544,7 +544,7 @@ function section(date,rows){rows=sortStations(rows,date,region);const label=CODE
 function weekNavigation(){const arr=['Miền','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','CN'];$('weekNav').innerHTML=arr.map((x,i)=>'<button data-week="'+i+'"'+(i===0?' class="active"':'')+'>'+x+'</button>').join('');}
 async function render(){const token=++generation;const to=todayVN(),from=addDays(to,-numDays+1);$('topLabel').textContent=CODES[region]+' – Xổ số '+NAMES[region];$('history').innerHTML='<div class="loading">Đang tải lịch sử '+NAMES[region]+'…</div>';try{const rows=await getRows(region,from,to);if(token!==generation)return;let sections='';for(let i=0;i<numDays;i++){const d=addDays(to,-i);if(i%7===0)sections+='<div class="week-title">'+(i===0?'7 ngày gần nhất':'Tuần trước · '+dateText(d))+'</div>';const expected=(SCHEDULE[region]||[])[vnWeekday(d)]||[];const dayRows=rows.filter(x=>x.date===d); sections+=section(d,dayRows)}$('history').innerHTML=sections;renderTodayStations();}catch(e){if(token===generation)$('history').innerHTML='<div class="message">Không tải được dữ liệu từ Supabase ('+safe(e.message)+'). Hãy thử lại khi có kết nối.</div>'}}
 function setRegion(r,shouldScroll=true,automatic=false){
-  if(!automatic)userSelectedRegion=true;
+  if(!automatic){userSelectedRegion=true;lastManualRegionDay=todayVN();}
  if(!['MN','MT','MB'].includes(r))return;
  ++liveRequest; // vô hiệu hóa mọi yêu cầu trực tiếp của miền trước
  region=r;numDays=7;
@@ -940,7 +940,8 @@ function autoSwitch(){
  const phase=day+'|'+active;
  if(lastAutoPhase===phase)return;
  lastAutoPhase=phase;
- // Chỉ tự chuyển tại thời điểm mở thưởng; lựa chọn thủ công của người xem vẫn được tôn trọng.
+ // Giữ lựa chọn miền thủ công trong ngày, tự động trở lại từ ngày kế tiếp.
+ if(userSelectedRegion&&lastManualRegionDay===day)return;
  userSelectedRegion=false;
  if(region!==active)setRegion(active,false,true);
  else updateLive();
