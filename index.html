@@ -661,7 +661,7 @@ function decorateLive(){
   if(isRolling){
    if(changed||!/^\d+$/.test(span.textContent))span.textContent='0'.repeat(liveDigitWidth(slot.dataset.prize));
    span.setAttribute('aria-label','Số đang quay mô phỏng');
-  }else if(changed||span.textContent!==(active?'↻':'Chờ quay')){
+  }else if(changed||span.textContent!==(active?'Đang chờ':'Chờ quay')){
    span.textContent=active?'Đang chờ':'Chờ quay';span.removeAttribute('aria-label');
   }
  });
