@@ -972,7 +972,7 @@ setInterval(()=>{
  lastLivePollAt=now;
  updateLive();
 },900);setInterval(()=>{if(!document.hidden)decorateLive()},1200);setInterval(()=>{if(!document.hidden){if(livePhase(region)==='drawing'&&!currentRollingSlots.some(x=>x.isConnected))decorateLive();tickLiveDigits()}},120);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){decorateLive();tickLiveDigits()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){decorateLive();tickLiveDigits();const mins=vnNow().getHours()*60+vnNow().getMinutes();if(mins>=LIVE_START.MN&&mins<LIVE_START.MB+75){lastLivePollAt=Date.now();updateLive();}}});
 
 // AUDIO LIVE: Chỉ phát khi người dùng đã bật loa và API có số MỚI thực tế.
 // Không phát âm thanh cho số đang quay mô phỏng, không đọc lại khi tải trang hoặc đổi miền.
