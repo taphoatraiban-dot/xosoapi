@@ -685,7 +685,7 @@ function tickLiveDigits(){
     const rolling=cell===target;
     cell.classList.toggle('live-rolling-cell',rolling);
     const label=cell.querySelector('.live-wait-anim');
-    if(label&&!rolling&&/^\\d+$/.test(label.textContent))label.textContent='Đang chờ';
+    if(label&&!rolling&&/^\d+$/.test(label.textContent))label.textContent='Đang chờ';
    }
    currentRollingSlots=target?[target]:[];
    el.classList.add('live-is-drawing');
