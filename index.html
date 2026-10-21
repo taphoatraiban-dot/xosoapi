@@ -904,7 +904,7 @@ function updateLiveProgress(){
   if(r!=='MB'&&!scheduledStations.has(stationKey))continue;
   for(const [prize,values] of Object.entries(row.prizes||{})){
    const cap=LIVE_PRIZE_COUNTS[r][prize]||0;
-   if(Array.isArray(values))received+=values.slice(0,cap).filter(v=>/^\d+$/.test(String(v))).length;
+   if(Array.isArray(values))received+=values.slice(0,cap).filter(v=>/^\d+$/.test(String(v))&&String(v).length===livePrizeDigits(r,prize)).length;
   }
  }
  received=Math.min(received,expected);
