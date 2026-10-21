@@ -898,7 +898,7 @@ function updateLiveProgress(){
  let received=0;
  if(saved)for(const row of saved.values())for(const [prize,values] of Object.entries(row.prizes||{})){
   const cap=LIVE_PRIZE_COUNTS[r][prize]||0;
-  if(Array.isArray(values))received+=values.slice(0,cap).filter(v=>/^\\d+$/.test(String(v))).length;
+  if(Array.isArray(values))received+=values.slice(0,cap).filter(v=>/^\d+$/.test(String(v))).length;
  }
  received=Math.min(received,expected);
  const remaining=Math.max(0,start*60-(mins*60+n.getSeconds()));
