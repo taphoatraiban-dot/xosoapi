@@ -617,6 +617,7 @@ function retainConfirmedLive(rows,r,d){
    const merged=previous.slice();
    values.forEach((n,i)=>{
     if(!/^\d+$/.test(String(n)))return;
+    if(i>=Number(LIVE_PRIZE_COUNTS[r]?.[prize]||0))return;
     if(merged[i]==null)merged[i]=String(n);
     else if(merged[i]!==String(n))console.warn('LIVE: kết quả mâu thuẫn, giữ số đã nhận',id,prize,i);
    });
