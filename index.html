@@ -919,7 +919,7 @@ setInterval(updateLiveProgress,1000);
 function updateLiveVisibility(){
  updateLiveProgress();
  const now=vnNow(),mins=now.getHours()*60+now.getMinutes();
- const visible=Object.values(LIVE_START).some(start=>mins>=start&&mins<start+60);
+ const visible=Object.values(LIVE_START).some(start=>mins>=start&&mins<start+75);
  document.body.classList.toggle('live-window-closed',!visible);
  for(const el of [$('live'),$('liveResults'),document.querySelector('.audio-panel')]){
   if(!el)continue;
@@ -933,7 +933,7 @@ function autoSwitch(){
  updateLiveVisibility();
  const now=vnNow(),mins=now.getHours()*60+now.getMinutes(),day=todayVN();
  let active=null;
- if(mins>=LIVE_START.MB&&mins<LIVE_START.MB+60)active='MB';
+ if(mins>=LIVE_START.MB&&mins<LIVE_START.MB+75)active='MB';
  else if(mins>=LIVE_START.MT&&mins<LIVE_START.MT+60)active='MT';
  else if(mins>=LIVE_START.MN&&mins<LIVE_START.MN+60)active='MN';
  if(!active)return;
@@ -961,9 +961,9 @@ setInterval(()=>{
  if(document.hidden)return;
  const phase=livePhase(region);
  // LIVE: tăng tần suất kiểm tra khi quay; tránh gửi chồng truy vấn khi mạng chậm.
- // Không gọi LIVE liên tục ngoài 16:00–19:00; lịch sử vẫn tải bình thường.
+ // Không gọi LIVE liên tục ngoài 16:00–19:15; lịch sử vẫn tải bình thường.
  const mins=vnNow().getHours()*60+vnNow().getMinutes();
- if(mins<LIVE_START.MN||mins>=LIVE_START.MB+60)return;
+ if(mins<LIVE_START.MN||mins>=LIVE_START.MB+75)return;
  const interval=phase==='drawing'?1200:15000;
  if(liveBusy&&liveLastRegion===region&&liveLastDate===todayVN())return;
  const now=Date.now();
