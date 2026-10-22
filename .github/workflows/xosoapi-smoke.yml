@@ -17,7 +17,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs=require('fs'),vm=require('vm');
-          const files=['index.html','thong-ke-2-so.html','thong-ke-3-so.html','thong-ke-4-so.html'];
+          const files=['index.html','thong-ke-2-so.html','thong-ke-3-so.html','thong-ke-4-so.html','do-ve-so.html','api-docs.html','pricing.html','dashboard.html'];
           let failures=0;
           for(const file of files){
             if(!fs.existsSync(file)){console.error('MISSING',file);failures++;continue}
