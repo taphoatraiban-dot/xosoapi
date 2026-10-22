@@ -60,6 +60,13 @@ jobs:
             assert(html.includes('365'),'365-day option missing from '+page);
             assert(/lottery_results/.test(html),'Statistics API missing from '+page);
           }
+          const siteUrls=[...map.matchAll(/<loc>https:\/\/xosothantaiapi\.info\/([^<]*)<\/loc>/g)].map(m=>decodeURIComponent(m[1]));
+          const missing=siteUrls.filter(path=>path && (!fs.existsSync(path)||!fs.statSync(path).isFile()));
+          assert(missing.length===0,'Sitemap points to missing files: '+missing.join(', '));
+          for(const page of ['do-ve-so.html','api-docs.html','pricing.html','dashboard.html']){
+            assert(fs.existsSync(page),'Missing API/ticket page '+page);
+            assert(map.includes('https://xosothantaiapi.info/'+page),'Page missing from sitemap: '+page);
+          }
           assert(ads==='google.com, pub-8504828724795234, DIRECT, f08c47fec0942fa0','ads.txt publisher line mismatch');
           console.log('LIVE selectors, statistics pages, sitemap and ads.txt checks passed');
           NODE
