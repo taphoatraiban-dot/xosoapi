@@ -2,7 +2,7 @@
 (()=>{'use strict';
 const script=document.currentScript, N=Number(script?.dataset.digits);if(![3,4].includes(N))return;
 const $=id=>document.getElementById('ha'+N+id), regions=['MN','MT','MB'];
-const KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni',URL='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';
+const KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni',ENDPOINT='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results';
 const COUNTS={MN:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},MT:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
 const WIDTH={MN:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},MT:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},MB:{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}};
 const normalizeKey=x=>String(x??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -31,7 +31,7 @@ function walk(v,region,date,out,depth=0){
 async function load(region,from,to){
  const rows=[];
  for(let cursor=from;cursor<=to;cursor=shift(cursor,45)){
-  const end=shift(cursor,44)>to?to:shift(cursor,44),url=new URL(URL);
+  const end=shift(cursor,44)>to?to:shift(cursor,44),url=new URL(ENDPOINT);
   url.searchParams.set('select','region,draw_date,data');url.searchParams.set('region','eq.'+region);
   url.searchParams.set('draw_date','gte.'+cursor);url.searchParams.set('draw_date','lte.'+end);url.searchParams.set('limit','1000');
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);let response;
