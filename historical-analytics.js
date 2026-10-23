@@ -99,6 +99,17 @@ function render(data,from,to){
   return [x===0?'Ngày cuối':x===1?'Hôm trước':x+' ngày trước',day,windowDays.has(day)?drawCount+' bảng đủ giải':'Thiếu kết quả đủ giải',windowDays.has(day)?dayEvents.length:'—',windowDays.has(day)?new Set(dayEvents.map(e=>e.number)).size:'—'];
  }),5);
 
+
+ const heads=Array(10).fill(0),tails=Array(10).fill(0),sums=new Map(),permutationGroups=new Map();
+ for(const e of m.events){
+  const s=e.number;heads[Number(s[0])]++;tails[Number(s.at(-1))]++;
+  const digitSum=[...s].reduce((a,c)=>a+Number(c),0);sums.set(digitSum,(sums.get(digitSum)||0)+1);
+  const perm=[...s].sort().join(''),g=permutationGroups.get(perm)||{count:0,variants:new Set(),dates:new Set()};
+  g.count++;g.variants.add(s);g.dates.add(e.date);permutationGroups.set(perm,g);
+ }
+ table('HeadTailRows',heads.map((n,i)=>[i,n,tails[i]]),3);
+ table('SumRows',[...sums].sort((a,b)=>a[0]-b[0]),2);
+ table('PermutationRows',[...permutationGroups].sort((a,b)=>b[1].count-a[1].count||a[0].localeCompare(b[0])).slice(0,10).map(([key,g])=>[key,g.count,g.variants.size,g.dates.size,[...g.variants].sort().slice(0,8).join(', ')]),5);
  const needle=$('Number').value.replace(/\D/g,'').slice(0,N);
  if(needle.length===N){const matches=m.events.filter(e=>e.number===needle).sort((a,b)=>b.date.localeCompare(a.date));
   table('NumberRows',matches.slice(0,50).map(e=>[e.date,e.region,e.station,e.prize,e.raw]),5);
