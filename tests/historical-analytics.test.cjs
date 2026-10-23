@@ -31,6 +31,7 @@ async function runCase(n,complete,duplicate=false){
  get('ha'+n+'BacktestRun').listeners.click();
  assert.match(get('ha'+n+'BacktestStatus').textContent,/Chưa đủ lịch sử|Đã đối chiếu ngoài mẫu/);
  assert.ok(get('ha'+n+'WeekChart').innerHTML.includes('haBarRow'));
+ if(complete){assert.ok(get('ha'+n+'PermutationRows').innerHTML.includes(n===3?'007':'0007'));assert.ok(get('ha'+n+'HeadTailRows').innerHTML.includes('<tr>'));}
  assert.ok(!get('ha'+n+'Status').textContent.startsWith('Lỗi'),get('ha'+n+'Status').textContent);
  if(complete){assert.match(summary,/1 ngày có ít nhất một đài đủ giải/);
    assert.ok(get('ha'+n+'TopRows').innerHTML.includes(n===3?'007':'0007'));
@@ -44,7 +45,7 @@ async function runCase(n,complete,duplicate=false){
   const html=fs.readFileSync('thong-ke-'+n+'-so.html','utf8');
   assert.ok(html.includes('id="ha'+n+'"'));
   assert.ok(html.includes('src="./historical-analytics.js" data-digits="'+n+'"'));
-  for(const id of ['Region','Station','Days','To','Number','Run','Status','Summary','Coverage','TopRows','RareRows','GanRows','WeekRows','PatternRows','MonthRows','StationRows','CompareRows','WeekChart','BacktestRun','BacktestRows','BacktestStatus','NumberRows','NumberInfo'])assert.ok(html.includes('id="ha'+n+id+'"'),id);
+  for(const id of ['Region','Station','Days','To','Number','Run','Status','Summary','Coverage','TopRows','RareRows','GanRows','WeekRows','PatternRows','MonthRows','StationRows','CompareRows','HeadTailRows','SumRows','PermutationRows','WeekChart','BacktestRun','BacktestRows','BacktestStatus','NumberRows','NumberInfo'])assert.ok(html.includes('id="ha'+n+id+'"'),id);
   await runCase(n,true);await runCase(n,false);await runCase(n,true,true);
  }
  console.log('Historical analytics tests: pass (3-digit, 4-digit, complete/incomplete/duplicate, leading-zero)');
