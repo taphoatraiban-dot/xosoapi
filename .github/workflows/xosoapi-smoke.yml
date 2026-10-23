@@ -38,6 +38,11 @@ jobs:
           }
           if(failures)process.exit(1);
           NODE
+      - name: Verify historical analytics module and fixture tests
+        shell: bash
+        run: |
+          node --check historical-analytics.js
+          node --test tests/historical-analytics.test.cjs
       - name: Verify live, statistics and SEO invariants
         shell: bash
         run: |
