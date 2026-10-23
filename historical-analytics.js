@@ -78,6 +78,27 @@ function render(data,from,to){
  $('WeekChart').innerHTML=w.map((x,i)=>'<div class="haBarRow"><span>'+['CN','T2','T3','T4','T5','T6','T7'][i]+'</span><div class="haBarTrack"><div class="haBarFill" style="width:'+Math.round(100*x.count/highest)+'%"></div></div><b>'+x.count+'</b></div>').join('');
  table('PatternRows',[...patterns].sort((a,b)=>b[1]-a[1]).map(([name,count])=>[name,count,m.events.length?(count*100/m.events.length).toFixed(2)+'%':'0%']),3);
  table('MonthRows',[...months].sort((a,b)=>a[0].localeCompare(b[0])),2);
+
+ const stationStats=new Map();
+ for(const d of data){if(!d.complete)continue;const k=d.region+'|'+d.station;
+  if(!stationStats.has(k))stationStats.set(k,{region:d.region,name:d.station,days:new Set(),count:0,nums:new Map()});
+  stationStats.get(k).days.add(d.date);
+ }
+ for(const e of m.events){const s=stationStats.get(e.region+'|'+e.station);if(!s)continue;
+  s.count++;s.nums.set(e.number,(s.nums.get(e.number)||0)+1);
+ }
+ const stationRows=[...stationStats.values()].sort((a,b)=>a.region.localeCompare(b.region)||a.name.localeCompare(b.name,'vi')).map(s=>{
+  const best=[...s.nums].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0];
+  return [s.region,s.name,s.days.size,s.count,(s.count/s.days.size).toFixed(2),best?best[0]+' ('+best[1]+')':'—'];
+ });
+ table('StationRows',stationRows,6);
+ const offsets=[0,1,7,14,21,28],windowDays=new Set(m.validDays);
+ table('CompareRows',offsets.map(x=>{const day=shift(to,-x);
+  if(day<from)return [x===0?'Ngày cuối':x===1?'Hôm trước':x+' ngày trước',day,'Ngoài khoảng tải','—','—'];
+  const dayEvents=m.events.filter(e=>e.date===day),drawCount=data.filter(d=>d.complete&&d.date===day).length;
+  return [x===0?'Ngày cuối':x===1?'Hôm trước':x+' ngày trước',day,windowDays.has(day)?drawCount+' bảng đủ giải':'Thiếu kết quả đủ giải',windowDays.has(day)?dayEvents.length:'—',windowDays.has(day)?new Set(dayEvents.map(e=>e.number)).size:'—'];
+ }),5);
+
  const needle=$('Number').value.replace(/\D/g,'').slice(0,N);
  if(needle.length===N){const matches=m.events.filter(e=>e.number===needle).sort((a,b)=>b.date.localeCompare(a.date));
   table('NumberRows',matches.slice(0,50).map(e=>[e.date,e.region,e.station,e.prize,e.raw]),5);
