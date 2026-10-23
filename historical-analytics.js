@@ -65,9 +65,9 @@ function render(data,from,to){
  table('TopRows',[...list].sort((a,b)=>b.count-a.count||b.dates.size-a.dates.size||a.num.localeCompare(b.num)).slice(0,10).map(format),6);
  table('RareRows',[...list].sort((a,b)=>a.count-b.count||a.num.localeCompare(b.num)).slice(0,10).map(format),6);
  table('GanRows',[...list].sort((a,b)=>b.age-a.age||a.num.localeCompare(b.num)).slice(0,10).map(format),6);
- const missing=10**N-list.length;set('Summary',m.events.length.toLocaleString('vi-VN')+' lượt số · '+m.validDays.size+' ngày có ít nhất một đài đủ giải · '+list.length+' số đã xuất hiện · '+missing+' số chưa ghi nhận.');
+ const missing=10**N-list.length;set('Summary',m.events.length.toLocaleString('vi-VN')+' lượt số · '+m.validDays.size+' ngày có ít nhất một đài đủ giải · '+list.length+' số đã xuất hiện · '+missing+' số chưa ghi nhận'+(m.validDays.size?' trong các kỳ đã có dữ liệu đủ giải.':'; CHƯA ĐỦ DỮ LIỆU để kết luận chưa ra.') );
  let absent=0;for(let d=from;d<=to;d=shift(d,1))if(!m.validDays.has(d))absent++;
- set('Coverage','Khoảng '+from+' đến '+to+' · '+absent+' ngày không có bảng đủ giải · '+m.incomplete.length+' bảng đài thiếu giải. Khi chọn tất cả đài, một ngày có bảng hợp lệ không đồng nghĩa mọi đài đều đủ dữ liệu.');
+ set('Coverage','Khoảng '+from+' đến '+to+' · '+absent+' ngày không có bảng đủ giải · '+m.incomplete.length+' bảng đài thiếu giải. Đây là các ngày không xác minh được kết quả, có thể gồm ngày nghỉ quay; không tự điền kết quả. Khi chọn tất cả đài, một ngày có bảng hợp lệ không đồng nghĩa mọi đài đều đủ dữ liệu.');
  const w=Array.from({length:7},()=>({dates:new Set(),count:0})),months=new Map(),patterns=new Map();
  for(const e of m.events){const x=w[weekday(e.date)];x.dates.add(e.date);x.count++;
   const month=e.date.slice(0,7);months.set(month,(months.get(month)||0)+1);
