@@ -74,6 +74,8 @@ function render(data,from,to){
   for(const [name,present] of Object.entries(features(e.number)))if(present)patterns.set(name,(patterns.get(name)||0)+1);
  }
  table('WeekRows',w.map((x,i)=>[['CN','T2','T3','T4','T5','T6','T7'][i],x.dates.size,x.count,x.dates.size?(x.count/x.dates.size).toFixed(2):'—']),4);
+ const highest=Math.max(1,...w.map(x=>x.count));
+ $('WeekChart').innerHTML=w.map((x,i)=>'<div class="haBarRow"><span>'+['CN','T2','T3','T4','T5','T6','T7'][i]+'</span><div class="haBarTrack"><div class="haBarFill" style="width:'+Math.round(100*x.count/highest)+'%"></div></div><b>'+x.count+'</b></div>').join('');
  table('PatternRows',[...patterns].sort((a,b)=>b[1]-a[1]).map(([name,count])=>[name,count,m.events.length?(count*100/m.events.length).toFixed(2)+'%':'0%']),3);
  table('MonthRows',[...months].sort((a,b)=>a[0].localeCompare(b[0])),2);
  const needle=$('Number').value.replace(/\D/g,'').slice(0,N);
