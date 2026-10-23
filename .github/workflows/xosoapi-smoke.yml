@@ -67,6 +67,31 @@ jobs:
             assert(fs.existsSync(page),'Missing API/ticket page '+page);
             assert(map.includes('https://xosothantaiapi.info/'+page),'Page missing from sitemap: '+page);
           }
+          const checker=fs.readFileSync('do-ve-so.html','utf8');
+          assert(checker.includes('const valid=a.filter(v=>'),'Ticket checker prize validation missing');
+          assert(checker.includes('String(v).length===widths[key]'),'Ticket checker must enforce exact prize widths');
+          assert(checker.includes('if(current!==requestId)return'),'Ticket checker must reject stale responses');
+          assert(checker.includes('if(!p.success)throw Error'),'Ticket checker must validate API success');
+          const widthMatch=checker.match(/const widths=region==="MB"?(.*?)?;/);
+          assert(widthMatch,'Ticket checker width map missing');
+          const prizeWidths={
+            MN:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},
+            MT:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},
+            MB:{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}
+          };
+          const prizeCounts={
+            MN:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},
+            MT:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},
+            MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}
+          };
+          for(const region of Object.keys(prizeWidths)){
+            const expected=region==='MB'?27:18;
+            assert(Object.values(prizeCounts[region]).reduce((a,b)=>a+b,0)===expected,'Invalid prize count '+region);
+            for(const [key,width] of Object.entries(prizeWidths[region])){
+              assert(width>0 && width<=6,'Invalid prize width '+region+':'+key);
+              assert(prizeCounts[region][key]>0,'Invalid prize count '+region+':'+key);
+            }
+          }
           assert(ads==='google.com, pub-8504828724795234, DIRECT, f08c47fec0942fa0','ads.txt publisher line mismatch');
           console.log('LIVE selectors, statistics pages, sitemap and ads.txt checks passed');
           NODE
