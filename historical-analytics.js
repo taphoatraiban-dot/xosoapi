@@ -97,7 +97,51 @@ async function run(){if($('Run').disabled)return;$('Run').disabled=true;
  }catch(e){set('Status','Lỗi tải dữ liệu: '+(e.message||String(e)));}finally{$('Run').disabled=false;}}
 function repaint(){if(!cacheTo)return;const span=Number($('Days').value)||60,station=$('Station').value;
  render(station==='ALL'?cache:cache.filter(d=>d.station===station),shift(cacheTo,-span+1),cacheTo);}
-$('Run').addEventListener('click',run);$('Station').addEventListener('change',repaint);$('Number').addEventListener('input',repaint);
+
+function backtest(){
+ if(!cacheTo){set('BacktestStatus','Hãy tải dữ liệu lịch sử trước khi kiểm thử.');return;}
+ const station=$('Station').value,data=station==='ALL'?cache:cache.filter(x=>x.station===station);
+ const events=model(data).events, dates=[...new Set(events.map(e=>e.date))].sort(), groups=new Map();
+ for(const e of events){if(!groups.has(e.date))groups.set(e.date,[]);groups.get(e.date).push(e);}
+ const methods=[
+  {id:'frequency',label:'Top 10 xuất hiện nhiều'},
+  {id:'recent',label:'Top 10 trong 14 ngày gần nhất'},
+  {id:'sameWeek',label:'Top 10 cùng thứ các tuần trước'},
+  {id:'stale',label:'Top 10 vắng lâu (từng xuất hiện)'}
+ ];
+ const summary=Object.fromEntries(methods.map(m=>[m.id,{hits:0,trials:0,hitDays:0,days:0,expected:0}]));
+ for(const date of dates){
+  const train=events.filter(e=>e.date<date&&e.date>=shift(date,-56));
+  if(new Set(train.map(e=>e.date)).size<6)continue;
+  const actual=groups.get(date)||[],history=new Map(),wd=weekday(date);
+  for(const e of train){const stat=history.get(e.number)||{number:e.number,count:0,recent:0,sameWeek:0,last:''};
+   stat.count++;if(e.date>=shift(date,-14))stat.recent++;
+   if(weekday(e.date)===wd)stat.sameWeek++;
+   if(e.date>stat.last)stat.last=e.date;history.set(e.number,stat);
+  }
+  const ranked=[...history.values()];
+  const numberTie=(a,b)=>a.number.localeCompare(b.number);
+  const order={
+   frequency:(a,b)=>b.count-a.count||numberTie(a,b),
+   recent:(a,b)=>b.recent-a.recent||b.count-a.count||numberTie(a,b),
+   sameWeek:(a,b)=>b.sameWeek-a.sameWeek||b.count-a.count||numberTie(a,b),
+   stale:(a,b)=>a.last.localeCompare(b.last)||numberTie(a,b)
+  };
+  for(const m of methods){
+   const sample=ranked.slice().sort(order[m.id]).slice(0,10);
+   if(!sample.length)continue;
+   const picks=new Set(sample.map(x=>x.number)),score=summary[m.id],hits=actual.filter(x=>picks.has(x.number)).length;
+   score.days++;score.trials+=actual.length;score.hits+=hits;score.hitDays+=Number(hits>0);
+   score.expected+=actual.length*sample.length/(10**N);
+  }
+ }
+ const rows=methods.map(m=>{const s=summary[m.id];return [m.label,s.days,s.hits+'/'+s.trials,s.trials?(100*s.hits/s.trials).toFixed(3)+'%':'—',s.trials?(100*s.expected/s.trials).toFixed(3)+'%':'—'];});
+ table('BacktestRows',rows,5);
+ const evaluated=summary.frequency.days;
+ set('BacktestStatus',evaluated?'Đã đối chiếu ngoài mẫu trên '+evaluated+' ngày có kết quả, chỉ dùng 56 ngày trước mỗi ngày kiểm tra (ít nhất 6 ngày có dữ liệu). Mỗi phương pháp chọn tối đa 10 số. Tỷ lệ là lượt giải trùng / tổng lượt giải; cột kỳ vọng giả định các số phân bố đồng đều. Không phải tỷ lệ chắc trúng tương lai.':'Chưa đủ lịch sử trước các ngày kiểm tra (cần tối thiểu 6 ngày có dữ liệu trong 56 ngày trước đó). Hãy chọn 180–365 ngày.');
+}
+$('Run').addEventListener('click',run);
+$('BacktestRun').addEventListener('click',backtest);$('Station').addEventListener('change',repaint);$('Number').addEventListener('input',repaint);
 $('Region').addEventListener('change',()=>{$('Station').innerHTML='<option value="ALL">Tất cả đài</option>';cache=[];cacheTo='';});
 $('To').value=shift(today(),-1);
 })();
