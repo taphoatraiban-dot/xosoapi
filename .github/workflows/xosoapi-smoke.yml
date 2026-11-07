@@ -38,6 +38,8 @@ jobs:
           }
           if(failures)process.exit(1);
           NODE
+      - name: Verify SEO sitemap and internal links
+        run: node tests/seo-content.test.cjs
       - name: Verify historical analytics module and fixture tests
         shell: bash
         run: |
