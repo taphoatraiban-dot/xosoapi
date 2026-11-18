@@ -9,3 +9,5 @@
 @media(max-width:550px){#ha3 .haTwo,#ha4 .haTwo{grid-template-columns:minmax(0,1fr)}#ha3 .focus-heading h2,#ha4 .focus-heading h2{font-size:20px}#ha3 .haScroll,#ha4 .haScroll{max-width:100%;overflow:auto}}
 
 @media(max-width:550px){#ha3 .focus-controls>div:last-child,#ha4 .focus-controls>div:last-child{grid-column:1 / -1}}
+
+.focus-nav{flex-wrap:wrap}

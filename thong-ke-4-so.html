@@ -20,7 +20,7 @@ $('mgregister').onclick=async()=>{status('Đang tạo tài khoản…');const r=
 $('mgtrial').onclick=async()=>{status('Đang kích hoạt dùng thử…');const r=await sb.rpc('member_start_trial');if(r.error)status('Không thể kích hoạt: '+r.error.message);else await check()};
 $('mglogout').onclick=async()=>{await sb.auth.signOut();await check()};await check();
 })();
-</script><main><header><h1>Thống kê 4 số</h1><small>Số nổi bật gần đây · Thống kê theo miền và đài</small></header><nav class="focus-nav"><a href="./index.html">Trang chủ</a><a href="./thong-ke-2-so.html">2 số</a><a href="./thong-ke-3-so.html">3 số</a></nav><section id="ha4" aria-label="Thống kê lịch sử 4 chữ số"><h2>Thống kê 4 số</h2><p class="haNote">Chọn miền và đài → tải dữ liệu → xem 5 số nổi bật gần đây. Chỉ tính bảng đủ giải.</p>
+</script><main><header><h1>Thống kê 4 số</h1><small>Số nổi bật gần đây · Thống kê theo miền và đài</small></header><nav class="focus-nav"><a href="./phan-tich-theo-ngay.html">Phân tích theo ngày</a><a href="./index.html">Trang chủ</a><a href="./thong-ke-2-so.html">2 số</a><a href="./thong-ke-3-so.html">3 số</a></nav><section id="ha4" aria-label="Thống kê lịch sử 4 chữ số"><h2>Thống kê 4 số</h2><p><a href="./phan-tich-theo-ngay.html">Xem bảng theo ngày: ĐĐ · XC · Bao 2–3–4 số →</a></p><p class="haNote">Chọn miền và đài → tải dữ liệu → xem 5 số nổi bật gần đây. Chỉ tính bảng đủ giải.</p>
 <div class="haFields">
 <div><label for="ha4Region">Miền</label><select id="ha4Region"><option value="ALL">Cả 3 miền</option><option value="MN" selected>Miền Nam</option><option value="MT">Miền Trung</option><option value="MB">Miền Bắc</option></select></div>
 <div><label for="ha4Station">Đài</label><select id="ha4Station"><option value="ALL">Tất cả đài</option></select></div>
