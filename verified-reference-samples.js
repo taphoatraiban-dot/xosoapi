@@ -1,0 +1,2 @@
+/* Small external reference sample retrieved in this session; not a 365-day certification. */
+globalThis.VerifiedReferenceSamples=[{source:'https://www.m.kqxs.vn/mien-bac?date=17-11-2026',checkedOn:'2026-11-18',row:{region:'MB',draw_date:'2026-11-17',data:{province:'Miền Bắc',prizes:{db:['29865'],g1:['39320'],g2:['84469','21924'],g3:['69105','18908','48229','64539','65535','24132'],g4:['5576','4867','9267','5550'],g5:['4262','5291','0917','2633','3146','5806'],g6:['648','952','173'],g7:['29','57','44','70']}}}}];
