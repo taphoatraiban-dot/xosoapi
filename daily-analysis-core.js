@@ -19,7 +19,15 @@ function patternOK(num,pattern='all'){
  throw Error('Dạng số không hợp lệ');
 }
 function applicable(type,pattern){return !(pattern==='twoPairs'&&TYPES[type].digits!==4||pattern==='triple'&&TYPES[type].digits<3);}
-function prepare(rows){
+function fullSignature(draw){return draw.region+'|'+draw.station+'|'+JSON.stringify(Object.keys(draw.prizes).sort().map(k=>[k,draw.prizes[k].slice().sort()]));}
+function prepare(rows,{beforeDate=null}={}){
+ if(beforeDate){
+  const historyRows=rows.filter(r=>r.draw_date<beforeDate),history=prepare(historyRows),observed=prepare(rows.filter(r=>r.draw_date===beforeDate));
+  const known=new Set(XosoStats.draws(historyRows).map(r=>fullSignature({region:r.region,station:r.region==='MB'?'mienbac':canon(r.data.province),prizes:r.data.prizes})));
+  const actualDraws=observed.draws.filter(d=>!known.has(fullSignature(d)));
+  return {...history,actualDraws,targetSuspectCount:observed.draws.length-actualDraws.length};
+ }
+
  const valid=XosoStats.draws(rows),map=new Map();
  for(const row of valid){const d={region:row.region,date:row.draw_date,station:row.region==='MB'?'mienbac':canon(row.data.province),prizes:row.data.prizes};const id=d.region+'|'+d.date+'|'+d.station;
   if(map.has(id)){if(JSON.stringify(Object.keys(d.prizes).sort().map(k=>[k,map.get(id).prizes[k].slice().sort()]))!==JSON.stringify(Object.keys(d.prizes).sort().map(k=>[k,d.prizes[k].slice().sort()])))throw Error('Bảng cùng ngày mâu thuẫn sau khi chuẩn hóa tên đài');continue;}map.set(id,d);

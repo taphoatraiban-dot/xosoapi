@@ -52,3 +52,9 @@ async function uiCase(allowed=true){
  get('dailyRegion').value='MT';get('dailyRegion').listeners.change();assert.equal(get('dailyCards').innerHTML,'');await get('dailyRun').listeners.click();assert.equal(fetches,27,'cache supports changing target region without reloading');assert.match(get('dailyScope').textContent,/Miền Trung/);
 }
 (async()=>{await uiCase(false);await uiCase(true);console.log('Daily page checks passed: entitlement before fetch, all five cards, 15 method comparisons, bounded requests, stale-card clearing and cached region changes.');})().catch(e=>{console.error(e);process.exitCode=1});
+
+const copied={...rows.find(r=>r.region==='MN'),draw_date:target};
+const historical=C.prepare(rows,{beforeDate:target}),withCopiedTarget=C.prepare([...rows,copied],{beforeDate:target});
+assert.equal(JSON.stringify(withCopiedTarget.draws),JSON.stringify(historical.draws),'target-date quality checks must not change training history');
+assert.equal(withCopiedTarget.targetSuspectCount,1);assert.equal(withCopiedTarget.actualDraws.length,0);
+console.log('Snapshot cutoff passed: target-day duplicate audit cannot alter training data.');
