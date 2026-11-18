@@ -7,3 +7,5 @@
 @media(max-width:550px){#ha3,#ha4{padding:15px}#ha3 .haFields,#ha4 .haFields{grid-template-columns:repeat(2,minmax(0,1fr))}#ha3 .focus-value,#ha4 .focus-value{font-size:40px}.legacy-analysis{padding:15px}#ha3 .focus-controls,#ha4 .focus-controls{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}}
 
 @media(max-width:550px){#ha3 .haTwo,#ha4 .haTwo{grid-template-columns:minmax(0,1fr)}#ha3 .focus-heading h2,#ha4 .focus-heading h2{font-size:20px}#ha3 .haScroll,#ha4 .haScroll{max-width:100%;overflow:auto}}
+
+@media(max-width:550px){#ha3 .focus-controls>div:last-child,#ha4 .focus-controls>div:last-child{grid-column:1 / -1}}

@@ -31,7 +31,7 @@ for(const digits of [3,4]){
  assert.ok(result.items.every(x=>x.num.length===digits));
  const page=fs.readFileSync('thong-ke-'+digits+'-so.html','utf8');
  assert.ok(page.indexOf('id="ha'+digits+'"')<page.indexOf('id="legacyAnalysis"'));
- assert.ok(page.includes('src="./stats-focus.js"'));assert.ok(page.includes('href="./stats-focus.css"'));
+ assert.ok(page.includes('src="./stats-focus.js?v=focus34-1"'));assert.ok(page.includes('href="./stats-focus.css"'));
  for(const id of ['FocusMode','FocusCount','Scope','Weekday','FocusContext','FocusCards','FocusNote'])assert.ok(page.includes('id="ha'+digits+id+'"'),id);
  assert.match(page,/<details id="legacyAnalysis" class="legacy-analysis">/);
  assert.ok(!/function boot\(\).*?b\.click\(\)/s.test(page),'no eager legacy loader');

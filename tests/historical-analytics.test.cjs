@@ -47,7 +47,7 @@ async function runCase(n,complete,duplicate=false){
  for(const n of [3,4]){
   const html=fs.readFileSync('thong-ke-'+n+'-so.html','utf8');
   assert.ok(html.includes('id="ha'+n+'"'));
-  assert.ok(html.includes('src="./historical-analytics.js" data-digits="'+n+'"'));
+  assert.ok(html.includes('src="./historical-analytics.js?v=focus34-1" data-digits="'+n+'"'));
   for(const id of ['Region','Station','Days','To','Number','Run','Status','Summary','Coverage','TopRows','RareRows','GanRows','WeekRows','PatternRows','MonthRows','StationRows','CompareRows','HeadTailRows','SumRows','PermutationRows','WeekChart','BacktestRun','BacktestRows','BacktestStatus','NumberRows','NumberInfo'])assert.ok(html.includes('id="ha'+n+id+'"'),id);
   await runCase(n,true);await runCase(n,false);await runCase(n,true,true);
  }
