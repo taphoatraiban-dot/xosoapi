@@ -68,3 +68,18 @@ console.log('Statistics regression checks passed: 3 regions, 2/3/4 digits, dupli
  }
  console.log('Combined statistics UI: exact counts passed in all nine region/digit cases.');
 })().catch(e=>{console.error(e);process.exitCode=1});
+(async()=>{
+ for(const digits of [3,4])for(const stale of [false,true]){
+  const html=fs.readFileSync('thong-ke-'+digits+'-so.html','utf8');
+  const script=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('const D='+digits+';')).replace(/\}\)\(\);\s*$/, 'globalThis.exactRun=run;})();');
+  const els=new Map(),get=id=>{if(!els.has(id))els.set(id,{value:'',innerHTML:'',textContent:'',disabled:false,selectedOptions:[{textContent:'MN'}],addEventListener(){}});return els.get(id);};
+  for(const [id,value] of Object.entries({exactNum:'7'.padStart(digits,'0'),exactRegion:'MN',exactDays:'30',exactStation:'ALL',exactWeekday:'ALL'}))get(id).value=value;
+  const env={document:{getElementById:get},XosoStats:ctx.XosoStats,URL,Date,Intl,AbortController,setTimeout,clearTimeout,fetch:async u=>{const row=fixture('MN');row.draw_date=u.searchParams.getAll('draw_date')[1].slice(4);if(stale)get('exactRegion').value='MT';return {ok:true,json:async()=>[row,row]};}};
+  vm.runInNewContext(script,env);await env.exactRun();
+  assert.ok(!get('exactStatus').textContent.startsWith('Không tải được'),get('exactStatus').textContent);
+  if(stale)assert.equal(get('exactCount').textContent,'','reject stale response after region change');
+  else assert.ok(Number(get('exactCount').textContent)>0,'exact lookup returns leading-zero matches');
+  assert.equal(get('exactGo').disabled,false);
+ }
+ console.log('Exact 3/4-digit lookup: duplicate fixtures and stale region responses passed.');
+})().catch(e=>{console.error(e);process.exitCode=1});
