@@ -6,7 +6,7 @@ const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',yea
 const fmt=d=>d?d.split('-').reverse().join('/'):'—',pct=v=>v===null?'—':(100*v).toFixed(2)+'%';
 let generation=0,cacheKey='',cache=null;
 function syncStations(){const old=$('dailyStation').value,region=$('dailyRegion').value,date=$('dailyDate').value||today();const expected=C.stations(region,date);$('dailyStation').innerHTML='<option value="ALL">Tất cả đài theo lịch ngày này</option>'+expected.map(s=>'<option value="'+s+'">'+esc(C.LABELS[s]||s)+'</option>').join('');$('dailyStation').value=expected.includes(old)?old:'ALL';}
-function clear(message){generation++;$('dailyCards').innerHTML='';$('dailyTests').innerHTML='';$('dailyPatterns').innerHTML='';$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='';$('dailyQuality').textContent='';$('dailyAudit').textContent='';$('dailyStatus').textContent=message;$('dailyScope').textContent='';$('dailyRun').disabled=false;}
+function clear(message){generation++;$('dailyCards').innerHTML='';$('dailyTests').innerHTML='';$('dailyPatterns').innerHTML='';$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='';$('dailyQuality').textContent='';$('dailyAudit').textContent='';$('dailyStatus').textContent=message;$('dailyScope').textContent='';for(const id of ['xcFocusStatus','xcFocusCards','xcQueryStatus','xcQueryRows','xcQueryEvents'])$(id).innerHTML='';$('dailyRun').disabled=false;}
 async function load(region,from,to,token){const rows=[];for(let cursor=from;cursor<=to;cursor=C.shift(cursor,45)){
  const end=C.shift(cursor,44)>to?to:C.shift(cursor,44);const u=new URL(ENDPOINT);u.searchParams.set('select','region,draw_date,data');u.searchParams.set('region','eq.'+region);u.searchParams.set('draw_date','gte.'+cursor);u.searchParams.append('draw_date','lte.'+end);u.searchParams.set('limit','1000');
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),20000);let res;try{res=await fetch(u,{headers:{apikey:KEY,Accept:'application/json'},signal:ctl.signal,cache:'no-store'});if(!res.ok)throw Error('Supabase HTTP '+res.status);const page=await res.json();if(!Array.isArray(page)||page.length>=1000)throw Error('Dữ liệu không hợp lệ hoặc vượt giới hạn tải.');rows.push(...page.filter(d=>d.region===region&&d.draw_date>=cursor&&d.draw_date<=end));}finally{clearTimeout(timer);}
@@ -24,6 +24,27 @@ function patternTable(draws,options){
  let html='';for(const type of Object.keys(C.TYPES)){const nums=prior.flatMap(d=>C.numbers(d,type)),universe=10**C.TYPES[type].digits;
  for(const [pattern,label] of Object.entries(patterns)){if(!C.applicable(type,pattern))continue;const hits=nums.filter(n=>C.patternOK(n,pattern)).length;let count=0;for(let i=0;i<universe;i++)count+=Number(C.patternOK(String(i).padStart(C.TYPES[type].digits,'0'),pattern));html+='<tr><td>'+esc(type)+'</td><td>'+esc(label)+'</td><td>'+hits+'/'+nums.length+'</td><td>'+pct(nums.length?hits/nums.length:null)+'</td><td>'+pct(count/universe)+'</td></tr>';}}
  $('dailyPatterns').innerHTML=html;
+}
+function xcOptions(){return {date:$('dailyDate').value,region:$('dailyRegion').value,station:$('dailyStation').value,windowDays:Number($('xcWindow').value)||30,mode:$('xcMatch').value||'exact',rule:$('xcRule').value||'any',query:$('xcQuery').value.trim()};}
+function currentCache(){const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const to=date<C.shift(today(),-1)?date:C.shift(today(),-1);return cache&&cacheKey==='ALL|'+C.shift(date,-365)+'|'+to;}
+function renderXCLookup(){
+ if(!currentCache()){$('xcQueryStatus').textContent='Tải phân tích của ngày đang chọn trước.';return;}
+ const q=XCProfile.queryHistory(cache.draws,xcOptions());$('xcQueryRows').innerHTML='';$('xcQueryEvents').innerHTML='';if(q.error){$('xcQueryStatus').textContent=q.error;return;}
+ if(!q.query){$('xcQueryStatus').textContent='Nhập 91 để xem đuôi 91 trong XC, hoặc 391 để tra nguyên số 391. Tra cứu riêng không đổi danh sách xếp hạng.';return;}
+ const label=q.kind==='tail'?'đuôi '+q.query:'nguyên số '+q.query;
+ $('xcQueryStatus').textContent='Đối chiếu '+label+' tại các đài đích đã chọn, tách từng thứ. Lượt tính trên từng số XC; số kỳ có ít nhất một lần xuất hiện được ghi riêng. Đây là tần suất trong mẫu lịch sử, không phải xác suất kỳ tới.';
+ $('xcQueryRows').innerHTML=q.rows.length?q.rows.map(r=>'<tr><td>'+esc(C.LABELS[r.station]||r.station)+'</td><td>'+['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][r.weekday]+'</td><td>'+r.hitDraws+'/'+r.draws+' kỳ</td><td>'+r.hits+'/'+r.slots+' lượt</td><td>'+pct(r.slots?r.hits/r.slots:null)+'</td><td>'+fmt(r.last)+'</td></tr>').join(''):'<tr><td colspan="6">Chưa có dữ liệu hợp lệ của đài đích.</td></tr>';
+ $('xcQueryEvents').innerHTML=q.events.slice(0,50).map(e=>'<span>'+fmt(e.date)+' · '+esc(C.LABELS[e.station]||e.station)+' · <b>'+e.number+'</b></span>').join('')||'Chưa ghi nhận số phù hợp trong dữ liệu đã tải.';
+}
+function renderXC(){
+ if(!currentCache()){$('xcFocusStatus').textContent='Chọn ngày, miền đích và bấm Phân tích theo ngày trước.';return;}
+ const options=xcOptions(),r=XCProfile.analyze(cache.draws,options),weekday=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(options.date+'T12:00:00Z').getUTCDay()],names={MN:'Nam',MT:'Trung',MB:'Bắc'};
+ $('xcFocusStatus').textContent=weekday+' · Miền đích '+names[options.region]+' · Nguồn: '+Object.keys(names).filter(x=>x!==options.region).map(x=>names[x]).join(' + ')+' trong '+options.windowDays+' ngày trước ngày phân tích. '+(options.mode==='family'?'Ứng viên gồm các số đảo của số nguồn; không gộp chúng thành trùng nguyên số.':'Chỉ nhận nguyên số XC đã xuất hiện ở miền nguồn.')+' Xếp riêng từng đài theo số kỳ cùng thứ có số, rồi toàn khoảng; không cộng điểm tùy ý.';
+ $('xcFocusCards').innerHTML=r.profiles.map(p=>{
+  const first=p.items[0],test=p.test,reason=first?'<strong class="day-number">'+first.number+'</strong><p class="reason">'+first.weekdayHits+'/'+p.weekdayDraws+' kỳ '+weekday+' có số này tại đài đích; toàn khoảng '+first.allHits+'/'+p.totalDraws+' kỳ.</p><p class="evidence">'+(first.sourceExact?'Có nguyên số ở nguồn':'Ứng viên đảo từ số nguồn')+' · Kiểm chứng cùng thứ: '+test.hits+'/'+test.trials+' kỳ ('+pct(test.rate)+'); ngẫu nhiên '+pct(test.random)+'. '+(test.trials<30?'Mẫu ít, chưa đủ kết luận ưu thế.':'Chưa xác nhận lợi thế dự báo.')+'</p>':'<p class="no-data">'+esc(p.reason)+'</p>';
+  const rows=p.items.slice(0,5).map(x=>{const source=x.sourceRegions.map(reg=>{const e=x.sourceEvents.filter(e=>e.region===reg).sort((a,b)=>b.date.localeCompare(a.date))[0];return names[reg]+': '+e.number+' ('+fmt(e.date)+')';}).join(' · ');return '<tr><td><b>'+x.number+'</b></td><td>'+esc(source)+(x.sourceExact?'':' · số đảo')+'</td><td>'+x.weekdayHits+'/'+p.weekdayDraws+'</td><td>'+x.allHits+'/'+p.totalDraws+'</td><td>'+fmt(x.weekdayLast)+'</td></tr>';}).join('');
+  return '<article class="xc-station"><div class="eyebrow">XC · '+esc(weekday)+'</div><h3>'+esc(C.LABELS[p.station]||p.station)+'</h3>'+reason+(rows?'<div class="scroll"><table><thead><tr><th>Số</th><th>Nguồn gần nhất</th><th>Kỳ cùng thứ</th><th>Toàn khoảng</th><th>Lần cuối cùng thứ</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'')+'</article>';
+ }).join('');renderXCLookup();
 }
 function renderCross(){
  const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){$('dailyCrossStatus').textContent='Chọn ngày hợp lệ và tải phân tích trước.';return;}const to=date<C.shift(today(),-1)?date:C.shift(today(),-1);if(!cache||cacheKey!=='ALL|'+C.shift(date,-365)+'|'+to){$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='Hãy tải phân tích của ngày đang chọn trước.';return;}
@@ -44,7 +65,7 @@ async function run(){const token=++generation;$('dailyRun').disabled=true;$('dai
  $('dailyScope').textContent=fmt(date)+' · '+{MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc'}[region]+' · '+expected.map(s=>C.LABELS[s]||s).join(', ')+' · '+C.METHODS[method];
  $('dailyQuality').textContent='Lịch sử cả 3 miền '+fmt(from)+' – '+fmt(to)+' · '+dates.size+' ngày có ít nhất một bảng trước ngày phân tích · '+cache.draws.length+' bảng trước ngày phân tích giữ lại · Loại '+cache.suspectCount+' bảng nghi lặp nguyên bảng khác ngày.'+(cache.targetSuspectCount?' Loại thêm '+cache.targetSuspectCount+' bảng của ngày đối chiếu vì trùng nguyên bảng cũ.':'')+' Chỉ nhận bảng đủ số lượng và độ dài giải. Ngày thiếu/đài thiếu được bỏ qua khi kiểm chứng; không coi là số chưa ra. Các đài theo lịch thường lệ, cần kiểm tra riêng ngày nghỉ quay.';
  $('dailyAudit').textContent=cache.suspectGroups.length?cache.suspectGroups.map(g=>(C.LABELS[g.station]||g.station)+': '+g.dates.map(fmt).join(' / ')).join('\n'):'Không thấy nguyên bảng giải lặp khác ngày trong khoảng tải. Điều này chưa thay thế đối chiếu nguồn độc lập.';
- const cards=[],tests=[];for(const type of Object.keys(C.TYPES)){
+ renderXC();const cards=[],tests=[];for(const type of Object.keys(C.TYPES)){
   if(token!==generation)return;$('dailyStatus').textContent='Đang kiểm chứng '+C.TYPES[type].label+' trên 90 ngày trước ngày đã chọn…';await new Promise(r=>setTimeout(r,0));
   const ranked=C.rank(cutoff,{...options,type}),checked=C.evaluate(cutoff,{...options,type});cards.push(renderCard(type,ranked,checked,method,date,[...cache.draws,...(cache.actualDraws||[])],options));tests.push(renderTests(type,checked));
   if(token!==generation)return;$('dailyCards').innerHTML=cards.join('');$('dailyTests').innerHTML=tests.join('');
@@ -55,5 +76,7 @@ $('dailyDate').value=today();$('dailyDate').max=C.shift(today(),7);syncStations(
 for(const id of ['dailyDate','dailyRegion'])$(id).addEventListener('change',()=>{syncStations();clear('Đã đổi ngày hoặc miền. Bấm Phân tích theo ngày để tải lại.');});
 for(const id of ['dailyStation','dailyMethod','dailyPattern'])$(id).addEventListener('change',()=>clear('Đã đổi cách xem. Bấm Phân tích theo ngày để cập nhật.'));
 for(const id of ['dailyCrossType','dailyCrossMode'])$(id).addEventListener('change',renderCross);
+for(const id of ['xcWindow','xcMatch','xcRule'])$(id).addEventListener('change',renderXC);$('xcQuery').addEventListener('input',renderXCLookup);
+const xcFirst=new URL(window.location?.href||'https://xosothantaiapi.info/phan-tich-theo-ngay.html').searchParams.get('focus')==='xc';document.body?.classList?.toggle('xc-first',xcFirst);
 $('dailyRun').addEventListener('click',run);
 })();
