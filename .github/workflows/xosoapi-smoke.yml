@@ -47,6 +47,7 @@ jobs:
           node --test tests/historical-analytics.test.cjs
           node --check stats-data.js
           node tests/stats-regression.test.cjs
+          node tests/admin-membership.test.cjs
       - name: Verify live, statistics and SEO invariants
         shell: bash
         run: |
