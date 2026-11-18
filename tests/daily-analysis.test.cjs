@@ -4,7 +4,7 @@ const context={};vm.createContext(context);for(const file of ['stats-data.js','d
 const counts={MN:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
 const widths={MN:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},MB:{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}};
 function fixture(region,date,station,seed){const prizes={};Object.entries(counts[region==='MT'?'MN':region]).forEach(([k,count],i)=>{const w=widths[region==='MT'?'MN':region][k];prizes[k]=Array.from({length:count},(_,j)=>String((seed*37+i*711+j*89)%10**w).padStart(w,'0'));});return {region,draw_date:date,data:{province:C.LABELS[station]||station,prizes}};}
-assert.equal(C.canon('TP HCM'),'hochiminh');assert.equal(C.canon('Thừa Thiên Huế'),'hue');assert.equal(C.canon('Đắc Nông'),'daknong');
+assert.equal(C.canon('TP HCM'),'hochiminh');assert.equal(C.canon('Thừa Thiên Huế'),'hue');assert.equal(C.canon('Đắc Nông'),'daknong');assert.equal(C.canon('Đắc Lắc'),'daklak');assert.equal(C.canon('Đắk Lắk'),'daklak');
 for(const region of ['MN','MT','MB']){
  const row=fixture(region,'2026-11-17',C.SCHEDULE[region][2][0],1);const d=C.prepare([row]).draws[0];
  for(const [type,m] of Object.entries(region==='MB'?{DD:5,XC:4,B2:27,B3:23,B4:20}:{DD:2,XC:2,B2:18,B3:17,B4:16}))assert.equal(C.numbers(d,type).length,m,region+type);
