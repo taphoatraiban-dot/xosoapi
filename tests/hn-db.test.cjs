@@ -8,3 +8,13 @@ a.throws(()=>H.rank(ds,date,4));a.equal(H.rank([],date,2).items.length,0);
 const counts={db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4},width={db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2};let raw=[];for(let i=180;i>=1;i--){let prizes={};for(let [k,n] of Object.entries(counts))prizes[k]=Array.from({length:n},(_,j)=>String((i*41+j*83)%10**width[k]).padStart(width[k],'0'));raw.push({region:'MB',draw_date:C.shift(date,-i),data:{province:'Miền Bắc',prizes}});}
 const tests=H.evaluate(raw,date);a.equal(tests.length,6);a.ok(tests.every(t=>t.trials===90));a.ok(tests.every(t=>t.random===1/10**t.digits));const bad=JSON.parse(JSON.stringify(raw));bad.at(-1).data.prizes.g6.pop();a.ok(H.evaluate(bad,date).every(t=>t.trials===89&&t.skipped===1));const future=JSON.parse(JSON.stringify(raw.at(-1)));future.draw_date=date;a.equal(JSON.stringify(H.evaluate([...raw,future],date)),JSON.stringify(tests));
 console.log('HN DB passed: DB-only scope, independent tails, weekday filters, leading zeros, gaps, adjacent transitions, six rolling evaluations, missing days and future exclusion.');
+// A displayed set must share its last two digits and parity, even when independent ranks differ.
+const aligned=[draw('2026-11-04','12000'),draw('2026-11-11','34000'),draw('2026-11-12','56338'),draw('2026-11-13','57138'),draw('2026-11-14','58238')];
+for(const method of ['all','recent','weekday'])for(let i=0;i<7;i++){const b=H.bundle(aligned,C.shift(date,i),method);if(b.three){a.equal(b.two,b.three.slice(-2));a.equal(b.parity,H.parity(b.two));}}
+a.equal(H.bundle(aligned,date).three,'000');a.equal(H.bundle(aligned,date).two,'00');a.equal(H.rank(aligned,date,2).items[0].number,'38');
+const leading=H.bundle([draw('2026-11-11','12014')],date);a.equal(leading.three,'014');a.equal(leading.two,'14');a.equal(leading.parity,'LC');
+const nodes={hnDBPanel:{},hnDBBody:{innerHTML:''},hnDBMethod:{value:'all'}};c.document={getElementById:id=>nodes[id]};H.render(aligned,date,raw);const html=nodes.hnDBBody.innerHTML;
+a.ok(html.includes('2 số cuối tương ứng: <span class="hn-linked-tail">00</span> · Chẵn–chẵn'));
+a.ok(html.includes('Thống kê 2 số độc lập — không thuộc bộ chính'));a.ok(html.includes('Số đứng đầu riêng: <b>38</b>'));a.ok(html.includes('<th>3 số của bộ chính</th><th>2 số cuối tương ứng</th>'));
+H.reset();a.equal(nodes.hnDBBody.textContent,'Chọn ngày rồi bấm Phân tích theo ngày.');
+console.log('Aligned set passed: 000 → 00, 014 → 14, parity, all methods, seven dates and separated independent ranking.');
