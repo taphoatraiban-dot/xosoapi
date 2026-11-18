@@ -59,7 +59,7 @@ async function run(){const token=++generation;globalThis.HNDB?.reset();$('dailyR
  const date=$('dailyDate').value,region=$('dailyRegion').value,station=$('dailyStation').value,method=$('dailyMethod').value,pattern=$('dailyPattern').value;
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||C.shift(date,0)!==date)throw Error('Ngày không hợp lệ.');if(date>C.shift(today(),7))throw Error('Chỉ phân tích đến 7 ngày tới; ngày xa hơn chưa có dữ liệu mới.');
  const from=C.shift(date,-365),to=date<C.shift(today(),-1)?date:C.shift(today(),-1),key='ALL|'+from+'|'+to;
- if(key!==cacheKey){const raw=[];for(const source of ['MN','MT','MB']){raw.push(...await load(source,from,to,token));if(token!==generation)return;}const prepared=C.prepare(raw,{beforeDate:date});if(token!==generation)return;cache=prepared;cache.raw=raw.filter(x=>x.region==='MB');cacheKey=key;}
+ if(key!==cacheKey){const raw=[];for(const source of ['MN','MT','MB']){raw.push(...await load(source,from,to,token));if(token!==generation)return;}const prepared=C.prepare(raw,{beforeDate:date});if(token!==generation)return;cache=prepared;cache.raw=raw;cacheKey=key;}
  if(token!==generation)return;const options={date,region,station,method,pattern},expected=C.stations(region,date,station);
  if(!expected.length)throw Error('Đài không quay vào ngày đã chọn.');const cutoff=cache.draws.filter(d=>d.date<date),dates=new Set(cutoff.map(d=>d.date));
  $('dailyScope').textContent=fmt(date)+' · '+{MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc'}[region]+' · '+expected.map(s=>C.LABELS[s]||s).join(', ')+' · '+C.METHODS[method];

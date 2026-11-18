@@ -51,6 +51,7 @@ jobs:
           node tests/daily-analysis.test.cjs
           node tests/xc-profile.test.cjs
           node tests/hn-db.test.cjs
+          node tests/hn-signal.test.cjs
           node tests/admin-membership.test.cjs
       - name: Verify live, statistics and SEO invariants
         shell: bash
