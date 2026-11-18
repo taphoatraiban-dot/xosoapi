@@ -18,7 +18,7 @@ async function runCase(n,complete,duplicate=false){
  let calls=0;
  const document={currentScript:{dataset:{digits:String(n)}},getElementById:get};
  const fetch=async u=>{calls++;const target=get('ha'+n+'To').value;
-   assert.match(String(u),/region=eq.MN/);
+   assert.match(String(u),/region=eq.MN/);const bounds=new URL(u).searchParams.getAll('draw_date');assert.equal(bounds.length,2);assert.ok(bounds.some(x=>x.startsWith('gte.')));assert.ok(bounds.some(x=>x.startsWith('lte.')));
    const row={region:'MN',draw_date:target,data:[fixture(complete)]};
    return {ok:true,json:async()=>duplicate?[row,row]:[row]};
  };
@@ -38,6 +38,8 @@ async function runCase(n,complete,duplicate=false){
    assert.ok(get('ha'+n+'NumberRows').innerHTML.includes('Đài thử nghiệm'));
    if(duplicate)assert.match(get('ha'+n+'Status').textContent,/1 bảng đài/);
  }else{assert.match(summary,/0 lượt số/);assert.match(coverage,/1 bảng đài thiếu giải/);}
+ get('ha'+n+'Days').value='30';get('ha'+n+'Days').listeners.change();assert.equal(get('ha'+n+'TopRows').innerHTML,'');assert.match(get('ha'+n+'Status').textContent,/Đã đổi thời gian/);
+ get('ha'+n+'BacktestRun').listeners.click();assert.match(get('ha'+n+'BacktestStatus').textContent,/Hãy tải dữ liệu/);
  return true;
 }
 (async()=>{

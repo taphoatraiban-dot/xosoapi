@@ -45,6 +45,8 @@ jobs:
         run: |
           node --check historical-analytics.js
           node --test tests/historical-analytics.test.cjs
+          node --check stats-data.js
+          node tests/stats-regression.test.cjs
       - name: Verify live, statistics and SEO invariants
         shell: bash
         run: |
@@ -102,3 +104,4 @@ jobs:
           assert(ads==='google.com, pub-8504828724795234, DIRECT, f08c47fec0942fa0','ads.txt publisher line mismatch');
           console.log('LIVE selectors, statistics pages, sitemap and ads.txt checks passed');
           NODE
+
