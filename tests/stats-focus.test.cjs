@@ -24,3 +24,16 @@ assert.match(get('topResult').innerHTML,/focus-number/);assert.match(get('topRes
 assert.ok(!get('topResult').innerHTML.includes('/100'),'no unvalidated prediction score');
 page.draws=[];page.renderTop();assert.match(get('topResult').innerHTML,/Chưa có danh sách/);assert.ok(!get('topResult').innerHTML.includes('>07<'),'clear stale cards');
 console.log('Focus view passed: per-station recent windows, repeat hits, leading zeros, historical view, order stability, empty state and collapsed sections.');
+for(const digits of [3,4]){
+ const a='7'.padStart(digits,'0'),b='12'.padStart(digits,'0');
+ const result=rank([{station:'A',date:'2026-11-17',nums:[a,a,b]},{station:'A',date:'2026-11-16',nums:[a]}],{digits});
+ assert.equal(result.items[0].num,a);assert.equal(result.items[0].recentHits,2);assert.equal(result.recentTotal,2);assert.equal(result.items.length,2);
+ assert.ok(result.items.every(x=>x.num.length===digits));
+ const page=fs.readFileSync('thong-ke-'+digits+'-so.html','utf8');
+ assert.ok(page.indexOf('id="ha'+digits+'"')<page.indexOf('id="legacyAnalysis"'));
+ assert.ok(page.includes('src="./stats-focus.js"'));assert.ok(page.includes('href="./stats-focus.css"'));
+ for(const id of ['FocusMode','FocusCount','Scope','Weekday','FocusContext','FocusCards','FocusNote'])assert.ok(page.includes('id="ha'+digits+id+'"'),id);
+ assert.match(page,/<details id="legacyAnalysis" class="legacy-analysis">/);
+ assert.ok(!/function boot\(\).*?b\.click\(\)/s.test(page),'no eager legacy loader');
+}
+console.log('Three/four-digit focus: number widths, repeated hits, shared assets, section ordering and lazy legacy tools passed.');

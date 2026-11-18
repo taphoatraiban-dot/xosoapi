@@ -22,7 +22,7 @@ async function runCase(n,complete,duplicate=false){
    const row={region:'MN',draw_date:target,data:[fixture(complete)]};
    return {ok:true,json:async()=>duplicate?[row,row]:[row]};
  };
- vm.runInNewContext(js,{document,fetch,Intl,Date,URL,AbortController,setTimeout,clearTimeout,console},{filename:'historical-analytics.js'});
+ const context={document,fetch,Intl,Date,URL,AbortController,setTimeout,clearTimeout,console};vm.createContext(context);vm.runInContext(fs.readFileSync('stats-focus.js','utf8'),context);vm.runInContext(js,context,{filename:'historical-analytics.js'});
  const listener=get('ha'+n+'Run').listeners.click;assert.equal(typeof listener,'function');
  await listener();
  const summary=get('ha'+n+'Summary').textContent,coverage=get('ha'+n+'Coverage').textContent;
@@ -31,14 +31,15 @@ async function runCase(n,complete,duplicate=false){
  get('ha'+n+'BacktestRun').listeners.click();
  assert.match(get('ha'+n+'BacktestStatus').textContent,/Chưa đủ lịch sử|Đã đối chiếu ngoài mẫu/);
  assert.ok(get('ha'+n+'WeekChart').innerHTML.includes('haBarRow'));
- if(complete){assert.ok(get('ha'+n+'PermutationRows').innerHTML.includes(n===3?'007':'0007'));assert.ok(get('ha'+n+'HeadTailRows').innerHTML.includes('<tr>'));}
+ if(complete){assert.ok(get('ha'+n+'FocusCards').innerHTML.includes('>'+('7'.padStart(n,'0'))+'</strong>'));assert.ok(get('ha'+n+'FocusCards').innerHTML.includes('1</b> / 1 kỳ'));assert.ok(get('ha'+n+'PermutationRows').innerHTML.includes(n===3?'007':'0007'));assert.ok(get('ha'+n+'HeadTailRows').innerHTML.includes('<tr>'));}
  assert.ok(!get('ha'+n+'Status').textContent.startsWith('Lỗi'),get('ha'+n+'Status').textContent);
  if(complete){assert.match(summary,/1 ngày có ít nhất một đài đủ giải/);
    assert.ok(get('ha'+n+'TopRows').innerHTML.includes(n===3?'007':'0007'));
    assert.ok(get('ha'+n+'NumberRows').innerHTML.includes('Đài thử nghiệm'));
    if(duplicate)assert.match(get('ha'+n+'Status').textContent,/1 bảng đài/);
  }else{assert.match(summary,/0 lượt số/);assert.match(coverage,/1 bảng đài thiếu giải/);}
- get('ha'+n+'Days').value='30';get('ha'+n+'Days').listeners.change();assert.equal(get('ha'+n+'TopRows').innerHTML,'');assert.match(get('ha'+n+'Status').textContent,/Đã đổi thời gian/);
+ if(complete){get('ha'+n+'Scope').value='db';get('ha'+n+'Scope').listeners.change();assert.match(get('ha'+n+'Summary').textContent,/1 lượt số/);get('ha'+n+'Weekday').value='7';get('ha'+n+'Weekday').listeners.change();assert.match(get('ha'+n+'FocusContext').textContent,/Chưa có dữ liệu/);get('ha'+n+'Weekday').value='ALL';get('ha'+n+'Weekday').listeners.change();assert.ok(get('ha'+n+'FocusCards').innerHTML.includes('<strong'));}
+ get('ha'+n+'Days').value='30';get('ha'+n+'Days').listeners.change();assert.equal(get('ha'+n+'TopRows').innerHTML,'');assert.equal(get('ha'+n+'FocusCards').innerHTML,'');assert.match(get('ha'+n+'Status').textContent,/Đã đổi thời gian/);
  get('ha'+n+'BacktestRun').listeners.click();assert.match(get('ha'+n+'BacktestStatus').textContent,/Hãy tải dữ liệu/);
  return true;
 }

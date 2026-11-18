@@ -46,9 +46,10 @@ function normalize(rows){const out=new Map();for(const row of rows){const draws=
   if(prior?.complete&&d.complete&&JSON.stringify(Object.keys(COUNTS[d.region]).map(k=>prior.prizes[k].slice().sort()))!==JSON.stringify(Object.keys(COUNTS[d.region]).map(k=>d.prizes[k].slice().sort())))throw Error('Kết quả mâu thuẫn: '+d.station+' '+d.date);
   if(!prior||(!prior.complete&&d.complete))out.set(id,d);}}
  return [...out.values()];}
+function prizeAllowed(prize,region){const scope=$('Scope').value||'bao';return scope==='db'?prize==='db':scope==='xc'?['db',region==='MB'?'g6':'g7'].includes(prize):true;}
 function model(data){const numbers=new Map(),validDays=new Set(),events=[],incomplete=[];
  for(const d of data){if(!d.complete){incomplete.push(d);continue;}validDays.add(d.date);
- for(const [prize,arr] of Object.entries(d.prizes))for(const raw of arr)if(raw.length>=N){const num=raw.slice(-N);
+ for(const [prize,arr] of Object.entries(d.prizes))for(const raw of arr)if(prizeAllowed(prize,d.region)&&raw.length>=N){const num=raw.slice(-N);
   events.push({number:num,date:d.date,station:d.station,region:d.region,prize,raw});
   const g=numbers.get(num)||{num,count:0,dates:new Set()};g.count++;g.dates.add(d.date);numbers.set(num,g);
  }}return {numbers,validDays,events,incomplete};}
@@ -60,7 +61,21 @@ function features(s){const a=[...s],counts=Object.values(a.reduce((m,c)=>(m[c]=(
  'Tổng chữ số chẵn':a.reduce((sum,x)=>sum+ +x,0)%2===0
 };}
 function table(id,rows,cols){$(id).innerHTML=rows.length?rows.map(row=>'<tr>'+row.map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols+'">Không có kết quả hợp lệ.</td></tr>';}
-function render(data,from,to){
+function renderFocus(data){
+ const mode=$('FocusMode').value||'recent',count=Number($('FocusCount').value)||5;
+ const rows=data.filter(d=>d.complete).map(d=>({station:d.region+'|'+d.station,date:d.date,nums:Object.entries(d.prizes).filter(([k])=>prizeAllowed(k,d.region)).flatMap(([,values])=>values.filter(raw=>raw.length>=N).map(raw=>raw.slice(-N)))}));
+ const result=XosoFocus.rank(rows,{window:10,mode,digits:N});
+ if(!result.total){set('FocusContext','Chưa có dữ liệu hợp lệ cho bộ lọc hiện tại.');$('FocusCards').innerHTML='<div class="focus-empty"><b>Chưa có danh sách số</b><p>Chọn miền, đài và bấm Xem số nổi bật.</p></div>';set('FocusNote','Danh sách chỉ tính bảng đủ giải; không suy ra số sắp ra từ lịch sử.');return;}
+ const region=$('Region').value,station=$('Station').value,scope=$('Scope').value||'bao';
+ const regionName={MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc',ALL:'Cả 3 miền'}[region];
+ const scopeName=scope==='db'?'Đặc biệt':scope==='xc'?'G7/G6 + Đặc biệt':'Bao lô '+N+' số';
+ const dateFormat=date=>date.split('-').reverse().join('/');
+ $('FocusContext').innerHTML='<b>'+escapeHTML(regionName)+' · '+escapeHTML(station==='ALL'?'Tất cả '+result.stations+' đài':station)+'</b><span>'+escapeHTML(scopeName)+' · '+result.total+' kỳ đài · Đến '+dateFormat(result.latest)+'</span>';
+ const denominator=mode==='overall'?result.total:result.recentTotal;
+ $('FocusCards').innerHTML='<div class="focus-grid">'+result.items.slice(0,count).map((x,i)=>'<article class="focus-number"><div class="focus-rank">#'+(i+1)+' · '+(mode==='overall'?'nổi bật toàn khoảng':'nổi bật gần đây')+'</div><strong class="focus-value">'+x.num+'</strong><div class="focus-main"><b>'+(mode==='overall'?x.hits:x.recentHits)+'</b> / '+denominator+' kỳ có số này</div><div class="focus-meter"><span style="width:'+(100*(mode==='overall'?x.hits:x.recentHits)/denominator).toFixed(2)+'%"></span></div><dl><div><dt>Gần đây</dt><dd>'+x.recentHits+'/'+result.recentTotal+' kỳ</dd></div><div><dt>Toàn khoảng</dt><dd>'+x.hits+'/'+result.total+' kỳ</dd></div><div><dt>Lần ra cuối</dt><dd>'+dateFormat(x.last)+'</dd></div></dl></article>').join('')+'</div>';
+ set('FocusNote','Cách xếp: '+(mode==='overall'?'số kỳ xuất hiện toàn khoảng, sau đó gần đây':'số kỳ xuất hiện trong 10 kỳ gần nhất mỗi đài, sau đó toàn khoảng')+'. Nếu bằng nhau, xét lần ra mới nhất rồi thứ tự số. Một kỳ ra nhiều lần chỉ tính 1 kỳ. '+result.recentTotal+' kỳ đài gần đây / '+result.total+' kỳ đã tải.'+(result.shortStations?' Có '+result.shortStations+' đài chưa đủ 10 kỳ trong bộ lọc.':'')+' Chỉ mô tả lịch sử, không phải xác suất kỳ tiếp theo.');
+}
+function render(data,from,to){renderFocus(data);
  const m=model(data),list=[...m.numbers.values()].map(g=>{const dates=[...g.dates].sort();const gaps=dates.slice(1).map((d,i)=>diff(dates[i],d));
   return {...g,dates,last:dates.at(-1),age:diff(dates.at(-1),to),mean:gaps.length?(gaps.reduce((a,b)=>a+b,0)/gaps.length).toFixed(1):'—'};});
  const format=g=>[g.num,g.count,g.dates.size,g.last,g.age,g.mean];
@@ -130,11 +145,12 @@ async function run(){if($('Run').disabled)return;$('Run').disabled=true;
   $('Station').value=choices.includes(station)?station:'ALL';repaint();
  }catch(e){invalidate('Lỗi tải dữ liệu: '+(e.message||String(e)));}finally{$('Run').disabled=false;}}
 function repaint(){if(!cacheTo)return;const station=$('Station').value;
- render(station==='ALL'?cache:cache.filter(d=>d.station===station),cacheFrom,cacheTo);}
+ const day=$('Weekday').value||'ALL';const filtered=cache.filter(d=>(station==='ALL'||d.station===station)&&(day==='ALL'||weekday(d.date)===Number(day)));
+ render(filtered,cacheFrom,cacheTo);}
 
 function backtest(){
  if(!cacheTo){set('BacktestStatus','Hãy tải dữ liệu lịch sử trước khi kiểm thử.');return;}
- const station=$('Station').value,data=station==='ALL'?cache:cache.filter(x=>x.station===station);
+ const station=$('Station').value,day=$('Weekday').value||'ALL',data=cache.filter(x=>(station==='ALL'||x.station===station)&&(day==='ALL'||weekday(x.date)===Number(day)));
  const events=model(data).events, dates=[...new Set(events.map(e=>e.date))].sort(), groups=new Map();
  for(const e of events){if(!groups.has(e.date))groups.set(e.date,[]);groups.get(e.date).push(e);}
  const methods=[
@@ -174,9 +190,11 @@ function backtest(){
  const evaluated=summary.frequency.days;
  set('BacktestStatus',evaluated?'Đã đối chiếu ngoài mẫu trên '+evaluated+' ngày có kết quả, chỉ dùng 56 ngày trước mỗi ngày kiểm tra (ít nhất 6 ngày có dữ liệu). Mỗi phương pháp chọn tối đa 10 số. Tỷ lệ là lượt giải trùng / tổng lượt giải; cột kỳ vọng giả định các số phân bố đồng đều. Không phải tỷ lệ chắc trúng tương lai.':'Chưa đủ lịch sử trước các ngày kiểm tra (cần tối thiểu 6 ngày có dữ liệu trong 56 ngày trước đó). Hãy chọn 180–365 ngày.');
 }
+for(const id of ['FocusMode','FocusCount','Scope','Weekday'])$(id).addEventListener('change',repaint);
 $('Run').addEventListener('click',run);
 $('BacktestRun').addEventListener('click',backtest);$('Station').addEventListener('change',repaint);$('Number').addEventListener('input',repaint);
 function invalidate(message){generation++;cache=[];cacheTo='';cacheFrom='';
+ $('FocusCards').innerHTML='';set('FocusContext',message);set('FocusNote','Chọn bộ lọc và bấm Xem số nổi bật.');
  for(const suffix of ['TopRows','RareRows','GanRows','WeekRows','PatternRows','MonthRows','StationRows','CompareRows','HeadTailRows','SumRows','PermutationRows','NumberRows','BacktestRows'])$(suffix).innerHTML='';
  for(const suffix of ['Summary','Coverage','NumberInfo','BacktestStatus','WeekChart'])$(suffix).textContent='';
  set('Status',message);
