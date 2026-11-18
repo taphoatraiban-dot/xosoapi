@@ -12,7 +12,7 @@ function analyze(raw,o){if(!V.SCOPES[o.scope]||!['exact','tail','family'].includ
  steps.push({lag:i+1,date:day,days:Math.round((new Date(day)-new Date(s.date))/86400000),status:future?'pending':!t?'missing':hit?'hit':'miss',matched,sourceNumbers:[...sourceNums],targetDB:t?.prizes.db[0]||null});}
  if(query&&key(query,o.mode)===k)events.push({sourceDate:s.date,sourceDB:s.prizes.db[0],numbers:[...sourceNums],steps});}}
  for(const b of stats){b.rate=b.trials?b.hits/b.trials:null;b.random=b.trials?b.randomSum/b.trials:null;b.interval=C.wilson(b.hits,b.trials);for(const phase of [b.early,b.late]){phase.rate=phase.trials?phase.hits/phase.trials:null;phase.random=phase.trials?phase.randomSum/phase.trials:null;}}
- const eligible=stats.filter(b=>b.early.trials>=30).sort((a,b)=>(b.early.rate-b.early.random)-(a.early.rate-a.early.random)||a.lag-b.lag),selectedLag=eligible[0]?.lag||null;
+ const eligible=stats.filter(b=>b.early.trials>=30&&b.early.hits>0&&b.early.rate>b.early.random).sort((a,b)=>(b.early.rate-b.early.random)-(a.early.rate-a.early.random)||a.lag-b.lag),selectedLag=eligible[0]?.lag||null;
  return {stats,events:events.sort((a,b)=>b.sourceDate.localeCompare(a.sourceDate)),sourceDraws:sources.length,targetDraws:targets.size,suspect:p.suspectCount,selectedLag,boundary,asOf:o.asOf,query,mode:o.mode,scope:o.scope};
 }
 globalThis.StationPair={analyze,targetDates,key};
