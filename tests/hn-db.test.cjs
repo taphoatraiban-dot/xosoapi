@@ -33,4 +33,6 @@ a.ok(nodes.hnDBBody.innerHTML.includes('1 số đồng hạng'));
 a.ok(!nodes.hnDBBody.innerHTML.includes('Nhóm đứng đầu không đổi'));
 console.log('Tied leader regression passed: all peers, matching tails, unchanged explanation, real past outcomes, and new-data ranking update.');
 
-a.ok(nodes.hnDBBody.innerHTML.startsWith('<article class="xc-station" id="hnLatestResult">'));a.ok(nodes.hnDBBody.innerHTML.includes('<article class="xc-station" id="hnReferenceCandidates"><h3>Ứng viên dự đoán tham khảo'));a.ok(nodes.hnDBBody.innerHTML.includes('Đây là kết quả đã quay'));
+a.ok(nodes.hnDBBody.innerHTML.startsWith('<article class="xc-station" id="hnReferenceCandidates">'));a.ok(nodes.hnDBBody.innerHTML.includes('<article class="xc-station" id="hnReferenceCandidates"><h3>Ứng viên dự đoán tham khảo'));a.ok(nodes.hnDBBody.innerHTML.includes('Đây là kết quả đã quay'));
+
+a.ok(nodes.hnDBBody.innerHTML.indexOf('3 số tham khảo')<nodes.hnDBBody.innerHTML.indexOf('hnSignal'));a.ok(nodes.hnDBBody.innerHTML.includes('<details><summary>Kiểm chứng dự đoán 2 số</summary>'));
