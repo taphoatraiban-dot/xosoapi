@@ -6,6 +6,7 @@ const KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni',ENDPOINT='https://zig
 const COUNTS={MN:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},MT:{db:1,g1:1,g2:1,g3:2,g4:7,g5:1,g6:3,g7:1,g8:1},MB:{db:1,g1:1,g2:2,g3:6,g4:4,g5:6,g6:3,g7:4}};
 const WIDTH={MN:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},MT:{db:6,g1:5,g2:5,g3:5,g4:5,g5:4,g6:4,g7:3,g8:2},MB:{db:5,g1:5,g2:5,g3:5,g4:4,g5:4,g6:3,g7:2}};
 const normalizeKey=x=>String(x??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().replace(/[^a-z0-9]/g,'');
+function stationName(x){const k=normalizeKey(x);return ({tphcm:'TP H\u1ed3 Ch\u00ed Minh',tphochiminh:'TP H\u1ed3 Ch\u00ed Minh',hochiminh:'TP H\u1ed3 Ch\u00ed Minh',hcm:'TP H\u1ed3 Ch\u00ed Minh',thuathienhue:'Hu\u1ebf',hue:'Hu\u1ebf',daclak:'\u0110\u1eafk L\u1eafk',daklak:'\u0110\u1eafk L\u1eafk',daclac:'\u0110\u1eafk L\u1eafk',daklac:'\u0110\u1eafk L\u1eafk',dacnong:'\u0110\u1eafk N\u00f4ng',daknong:'\u0110\u1eafk N\u00f4ng',lamdong:'\u0110\u00e0 L\u1ea1t',dalat:'\u0110\u00e0 L\u1ea1t'})[k]||String(x);}
 const escapeHTML=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const shift=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -19,7 +20,7 @@ function walk(v,region,date,out,depth=0,parentStation=''){
  if(Array.isArray(v)){v.forEach(x=>walk(x,region,date,out,depth+1,parentStation));return;}
  if(typeof v!=='object')return;
  if(v.prizes&&typeof v.prizes==='object'){
-  const station=String(v.province||v.station||v.tinh||v.name||parentStation||(region==='MB'?'Miền Bắc':'Không xác định'));
+  const station=stationName(v.province||v.station||v.tinh||v.name||parentStation||(region==='MB'?'Miền Bắc':'Không xác định'));
   const prizes={},alias={special:'db',dacbiet:'db',giaidacbiet:'db'};
   for(const [raw,a] of Object.entries(v.prizes)){const k=alias[normalizeKey(raw)]||normalizeKey(raw);if(!(k in COUNTS[region]))continue;
    prizes[k]=(Array.isArray(a)?a:[a]).map(x=>String(x??'').trim()).filter(x=>/^\d+$/.test(x)&&x.length===WIDTH[region][k]);}

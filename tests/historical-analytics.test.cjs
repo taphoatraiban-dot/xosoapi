@@ -47,9 +47,19 @@ async function runCase(n,complete,duplicate=false){
  for(const n of [3,4]){
   const html=fs.readFileSync('thong-ke-'+n+'-so.html','utf8');
   assert.ok(html.includes('id="ha'+n+'"'));
-  assert.ok(html.includes('src="./historical-analytics.js?v=focus34-1" data-digits="'+n+'"'));
+  assert.ok(html.includes('src="./historical-analytics.js?v=layout-2" data-digits="'+n+'"'));
   for(const id of ['Region','Station','Days','To','Number','Run','Status','Summary','Coverage','TopRows','RareRows','GanRows','WeekRows','PatternRows','MonthRows','StationRows','CompareRows','HeadTailRows','SumRows','PermutationRows','WeekChart','BacktestRun','BacktestRows','BacktestStatus','NumberRows','NumberInfo'])assert.ok(html.includes('id="ha'+n+id+'"'),id);
   await runCase(n,true);await runCase(n,false);await runCase(n,true,true);
  }
  console.log('Historical analytics tests: pass (3-digit, 4-digit, complete/incomplete/duplicate, leading-zero)');
 })().catch(err=>{console.error(err);process.exitCode=1;});
+// Alias names must not split a station or double-count the same board.
+const aliasContext={document:{currentScript:{dataset:{digits:'3'}},getElementById:()=>({})}};vm.createContext(aliasContext);
+const hook="for(const id of ['FocusMode','FocusCount','Scope','Weekday'])";
+assert.ok(js.includes(hook));vm.runInContext(js.replace(hook,'globalThis.testNormalize=normalize;return;'+hook),aliasContext);
+const aliasRow=(province,date='2026-11-18')=>({region:'MN',draw_date:date,data:{...fixture(),province}});
+const aliases=aliasContext.testNormalize([aliasRow('TP HCM'),aliasRow('TP Hồ Chí Minh')]);assert.equal(aliases.length,1);assert.equal(aliases[0].station,'TP Hồ Chí Minh');
+const differentDays=aliasContext.testNormalize([aliasRow('TP HCM'),aliasRow('TP Hồ Chí Minh','2026-11-11')]);assert.equal(differentDays.length,2);assert.equal(new Set(differentDays.map(x=>x.station)).size,1);
+const conflict=aliasRow('TP Hồ Chí Minh');conflict.data.prizes.db=['999999'];assert.throws(()=>aliasContext.testNormalize([aliasRow('TP HCM'),conflict]),/mâu thuẫn/);
+assert.equal(aliasContext.testNormalize([aliasRow('Thừa Thiên Huế'),aliasRow('Huế')]).length,1);
+console.log('Station aliases passed: common name, same-day deduplication, separate dates and conflict rejection.');
