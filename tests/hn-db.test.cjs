@@ -14,7 +14,21 @@ for(const method of ['all','recent','weekday'])for(let i=0;i<7;i++){const b=H.bu
 a.equal(H.bundle(aligned,date).three,'000');a.equal(H.bundle(aligned,date).two,'00');a.equal(H.rank(aligned,date,2).items[0].number,'38');
 const leading=H.bundle([draw('2026-11-11','12014')],date);a.equal(leading.three,'014');a.equal(leading.two,'14');a.equal(leading.parity,'LC');
 const nodes={hnDBPanel:{},hnDBBody:{innerHTML:''},hnDBMethod:{value:'all'}};c.document={getElementById:id=>nodes[id]};H.render(aligned,date,raw);const html=nodes.hnDBBody.innerHTML;
-a.ok(html.includes('2 số cuối tương ứng: <span class="hn-linked-tail">00</span> · Chẵn–chẵn'));
-a.ok(html.includes('Thống kê 2 số độc lập — không thuộc bộ chính'));a.ok(html.includes('Số đứng đầu riêng: <b>38</b>'));a.ok(html.includes('<th>3 số của bộ chính</th><th>2 số cuối tương ứng</th>'));
+a.ok(html.includes('<b>000</b></td><td><span class="hn-linked-tail">00</span></td><td>Chẵn–chẵn')); 
+a.ok(html.includes('Thống kê 2 số độc lập — không thuộc bộ chính'));a.ok(html.includes('Số đứng đầu riêng: <b>38</b>'));a.ok(html.includes('Đối chiếu 7 ngày trước ngày chọn'));a.ok(!html.includes('7 ngày từ ngày chọn'));a.ok(!html.includes('class="day-number"'));
 H.reset();a.equal(nodes.hnDBBody.textContent,'Chọn ngày rồi bấm Phân tích theo ngày.');
 console.log('Aligned set passed: 000 → 00, 014 → 14, parity, all methods, seven dates and separated independent ranking.');
+
+// Regression: tied annual leaders must both appear, with consistent linked tails.
+const tied=[draw('2026-04-12','12000'),draw('2026-06-14','34000'),draw('2026-07-28','56000'),draw('2026-01-31','12754'),draw('2026-05-19','34754'),draw('2026-07-23','56754'),draw('2026-11-16','97403')];
+H.render(tied,date,raw);const tiedHTML=nodes.hnDBBody.innerHTML;
+a.ok(tiedHTML.includes('2 số đồng hạng'));
+a.ok(tiedHTML.includes('<b>754</b></td><td><span class="hn-linked-tail">54</span></td><td>Lẻ–chẵn'));
+a.ok(tiedHTML.includes('Nhóm đứng đầu không đổi'));
+a.ok(tiedHTML.includes('Đối chiếu ba cửa sổ lịch sử'));
+a.ok(tiedHTML.includes('<td>403</td>'),'retrospective displays actual DB tail');
+a.ok(!tiedHTML.includes('<td>19/11/2026</td>'),'no future date rows');
+H.render([...tied,draw('2026-11-17','78754')],date,raw);
+a.ok(nodes.hnDBBody.innerHTML.includes('1 số đồng hạng'));
+a.ok(!nodes.hnDBBody.innerHTML.includes('Nhóm đứng đầu không đổi'));
+console.log('Tied leader regression passed: all peers, matching tails, unchanged explanation, real past outcomes, and new-data ranking update.');
