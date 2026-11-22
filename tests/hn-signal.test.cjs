@@ -8,3 +8,5 @@ const draws=C.prepare(raw,{beforeDate:date}).draws;const source=(region,station,
 const number=c.HNDB.rank(draws,date,2,'weekday').items[0].number;for(const d of complete){d.prizes.db=['000'+number];d.prizes.g7=['1'+number];}
 const cross=S.pick([...draws,...complete],date,'cross');a.equal(cross.number,number);a.ok(cross.evidence.every(e=>e.date<date&&e.date>=C.shift(date,-7)));a.equal(S.pick([...draws,...complete.slice(1)],date,'cross').number,null);a.equal(S.pick([],date,'all').number,null);
 const node={innerHTML:''};c.document={getElementById:id=>id==='hnSignal'?node:null};S.render(draws,date,raw);a.ok(node.innerHTML.includes('Chưa có bằng chứng'));a.ok(node.innerHTML.includes('1.00%'));a.ok(node.innerHTML.includes('không thay bộ 3 số'));console.log('HN signal passed: separate periods, frozen method selection, target exclusion, exact binomial baseline, complete source windows, XC scope and honest empty state.');
+
+a.ok(node.innerHTML.includes('Không đề xuất số: kiểm chứng chưa đạt.'));a.ok(!node.innerHTML.includes('Số tham khảo theo quy tắc đó:'));
