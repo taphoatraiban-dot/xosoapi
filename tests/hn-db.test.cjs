@@ -32,3 +32,5 @@ H.render([...tied,draw('2026-11-17','78754')],date,raw);
 a.ok(nodes.hnDBBody.innerHTML.includes('1 số đồng hạng'));
 a.ok(!nodes.hnDBBody.innerHTML.includes('Nhóm đứng đầu không đổi'));
 console.log('Tied leader regression passed: all peers, matching tails, unchanged explanation, real past outcomes, and new-data ranking update.');
+
+a.ok(nodes.hnDBBody.innerHTML.startsWith('<article class="xc-station" id="hnLatestResult">'));a.ok(nodes.hnDBBody.innerHTML.includes('<details class="xc-station"><summary>Xem nhóm tần suất lịch sử'));a.ok(nodes.hnDBBody.innerHTML.includes('Đây là kết quả đã quay'));
