@@ -33,6 +33,17 @@ a.ok(nodes.hnDBBody.innerHTML.includes('1 số đồng hạng'));
 a.ok(!nodes.hnDBBody.innerHTML.includes('Nhóm đứng đầu không đổi'));
 console.log('Tied leader regression passed: all peers, matching tails, unchanged explanation, real past outcomes, and new-data ranking update.');
 
-a.ok(nodes.hnDBBody.innerHTML.startsWith('<article class="xc-station" id="hnReferenceCandidates">'));a.ok(nodes.hnDBBody.innerHTML.includes('<article class="xc-station" id="hnReferenceCandidates"><h3>Ứng viên dự đoán tham khảo'));a.ok(nodes.hnDBBody.innerHTML.includes('Đây là kết quả đã quay'));
+a.ok(nodes.hnDBBody.innerHTML.startsWith('<article class="xc-station" id="hnTwoCandidates">'));a.ok(nodes.hnDBBody.innerHTML.includes('<article class="xc-station" id="hnReferenceCandidates"><h3>3 số cuối ĐB · xếp riêng'));a.ok(nodes.hnDBBody.innerHTML.includes('Đây là kết quả đã quay'));
 
-a.ok(nodes.hnDBBody.innerHTML.indexOf('3 số tham khảo')<nodes.hnDBBody.innerHTML.indexOf('hnSignal'));a.ok(nodes.hnDBBody.innerHTML.includes('<details><summary>Kiểm chứng dự đoán 2 số</summary>'));
+a.ok(nodes.hnDBBody.innerHTML.indexOf('3 số · xếp riêng')<nodes.hnDBBody.innerHTML.indexOf('hnSignal'));a.ok(nodes.hnDBBody.innerHTML.includes('<details><summary>Kiểm chứng dự đoán 2 số</summary>'));
+
+const seq=[draw('2026-11-01','12129'),draw('2026-11-02','34229'),draw('2026-11-03','56129')];
+const rec=H.recurrence(seq,'2026-11-04');
+a.equal(rec.find(x=>x.digits===2&&x.window===1).hits,2);
+a.equal(rec.find(x=>x.digits===3&&x.window===1).hits,0);
+a.equal(rec.find(x=>x.window===7).trials,0);
+a.equal(H.recurrence([seq[0],seq[2]],'2026-11-04').find(x=>x.window===1).missing,1);
+a.equal(H.recurrence([...seq,draw('2026-11-04','99129')],'2026-11-04')[0].trials,2);
+a.ok(Math.abs(rec[0].random-.01)<1e-12);
+a.ok(nodes.hnDBBody.innerHTML.includes('Số đã ra có lặp lại không?'));
+console.log('Independent tails and recurrence passed: exact matching, missing windows, unfinished windows and future exclusion.');
