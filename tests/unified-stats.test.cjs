@@ -13,7 +13,7 @@ a.equal(U.analyze(rows,{...o,scope:'DDD',sourceOnly:true,rule:'both'}).profiles[
 a.equal(U.analyze(rows,{...o,sourceOnly:true,rule:'both'}).profiles[0].items.length,0,'two sources with same tail are not an exact 3-digit agreement');
 a.equal(U.analyze(target,o).profiles[0].items[0].hasSource,false);
 const future=draw('MN','kiengiang',date,'99674','674');a.equal(JSON.stringify(U.analyze([...rows,future],o)),JSON.stringify(U.analyze(rows,o)));
-const family=[...target,draw('MN','kiengiang','2026-11-22','99888','764')];p=U.analyze(family,{...o,mode:'family'}).profiles[0];a.equal(p.items[0].hasSource,true);a.equal(p.items[0].sourceExact,false);
+const family=[...target,draw('MN','kiengiang','2026-11-22','99888','764')];p=U.analyze(family,{...o,mode:'family'}).profiles[0];a.equal(p.items[0].hasSource,true);a.equal(p.items[0].sourceExact,false);a.equal(U.analyze(family,{...o,scope:'DDD',mode:'family'}).profiles[0].items[0].sourceExact,false,'a projected family tail must not be labelled exact');
 a.equal(U.analyze(rows,{...o,scope:'B4',sourceOnly:true}).sourceApplicable,false);a.ok(U.analyze(rows,{...o,scope:'B4',sourceOnly:true}).profiles[0].items.length>0,'XC sources cannot suppress 4-digit statistics');
 a.equal(U.analyze(target.slice(0,5),o).profiles[0].items.length,0);
 const zeroes=target.map(d=>({...d,prizes:{...d.prizes,db:['12000']}}));a.equal(U.analyze(zeroes,o).profiles[0].items[0].number,'000');
