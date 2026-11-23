@@ -53,6 +53,7 @@ jobs:
           node tests/hn-db.test.cjs
           node tests/hn-signal.test.cjs
           node tests/hn-model.test.cjs
+          node tests/unified-stats.test.cjs
           node tests/verified-analysis.test.cjs
           node tests/station-pair.test.cjs
           node tests/admin-membership.test.cjs
