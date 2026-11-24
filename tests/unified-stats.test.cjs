@@ -53,3 +53,20 @@ async function prospectiveCase(){
  let resolveAuth;sb.auth.getUser=()=>new Promise(r=>{resolveAuth=r;});const stale=U.saveForecast();U.clear();resolveAuth({data:{user:{id:'test'}}});await stale;a.equal(inserts,1,'changed filters or cleared data must cancel before insert');
  console.log('Prospective ledger passed: explicit scopes, VN deadlines, one saved number, source filters, authenticated writes, immutable existing picks, scored outcomes and stale-save cancellation.');
 }
+
+// G7 is a real prize view, not the legacy MB G6/XC alias.
+const mbG7=U.analyze(target,{...o,scope:'G7'});a.equal(mbG7.digits,2);a.equal(mbG7.scope,'DDA');a.ok(mbG7.profiles[0].items.every(x=>['01','02','03','04'].includes(x.number)));a.ok(!mbG7.profiles[0].items.some(x=>x.number==='321'));
+const mnG7=Array.from({length:10},(_,i)=>draw('MN','hochiminh',C.shift(date,-7*(i+1)),'12674','007'));
+const mnOption={...o,region:'MN',station:'hochiminh',scope:'G7'};a.equal(U.analyze(mnG7,mnOption).profiles[0].items[0].number,'007');a.equal(U.analyze(mnG7,mnOption).digits,3);
+const mtG7=mnG7.map(x=>({...x,region:'MT',station:'phuyen'}));a.equal(U.analyze(mtG7,{...mnOption,region:'MT',station:'phuyen'}).profiles[0].items[0].number,'007');
+a.equal(U.forecastRecords(mnG7,mnOption,hash)[0].scope,'XCA');a.equal(U.forecastRecords(target,{...o,scope:'G7'},hash)[0].scope,'DDA');a.equal(U.forecastRecords(target,{...o,scope:'G7'},hash)[0].number.length,2);a.equal(U.forecastRecords(mnG7,mnOption,hash)[0].snapshot.view_scope,'G7');
+const sourceMB=draw('MB','mienbac','2026-11-22','12000');sourceMB.prizes.g6=['999','998','997'];
+a.equal(U.prizeSources([sourceMB],{...mnOption,sourcePrize:'g7'},3).length,0,'MB 2-digit G7 cannot become a 3-digit source');
+const src2=U.prizeSources([sourceMB],{...mnOption,sourcePrize:'g7'},2);a.equal(src2.length,4);a.ok(src2.every(x=>x.sourceEvents.every(e=>e.prize==='G7')));
+const src3=U.prizeSources([sourceMB],{...mnOption,sourcePrize:'g7db'},3);a.equal(src3.length,1);a.equal(src3[0].number,'000');a.ok(src3[0].sourceEvents.every(e=>e.prize==='ĐB'));a.ok(!src3.some(x=>x.number==='999'));
+a.equal(U.prizeSources([{...sourceMB,date}],{...mnOption,sourcePrize:'g7db'},3).length,0);
+const last=U.overview([...target,draw('MB','mienbac',date,'99999')],o)[0];a.equal(last.db,'12674');a.equal(last.g7.length,4);a.equal(last.date,'2026-11-22');
+a.ok(page.includes('id="g7dbOverview"'));a.ok(page.includes('data-prize-view="G7"'));a.ok(page.includes('id="unifiedSourcePrize"'));
+console.log('G7/DB focus passed: regional widths, real G7 only, no MB G6 leakage, leading zeros, explicit source prizes, DB tails and canonical immutable ledger scopes.');
+
+a.equal(JSON.stringify(U.backtest(raw,{...o,scope:'G7'})),JSON.stringify(U.backtest(raw,{...o,scope:'DDA',sourcePrize:'g7db'})),'MB G7 validation must use real 2-digit G7, not G6');
