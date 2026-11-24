@@ -4,7 +4,7 @@ const ENDPOINT='https://zigpqddlhvjbjrwhfhaa.supabase.co/rest/v1/lottery_results
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const fmt=d=>d?d.split('-').reverse().join('/'):'—',pct=v=>v===null?'—':(100*v).toFixed(2)+'%';
-let generation=0,cacheKey='',cache=null;
+let generation=0,cacheKey='',cache=null,cacheLoadedAt=0;
 function syncStations(){const old=$('dailyStation').value,region=$('dailyRegion').value,date=$('dailyDate').value||today();const expected=C.stations(region,date);$('dailyStation').innerHTML='<option value="ALL">Tất cả đài theo lịch ngày này</option>'+expected.map(s=>'<option value="'+s+'">'+esc(C.LABELS[s]||s)+'</option>').join('');$('dailyStation').value=expected.includes(old)?old:'ALL';}
 function clear(message){generation++;globalThis.UnifiedStats?.clear();globalThis.AnalysisReview?.clear();globalThis.StationPairUI?.clear();globalThis.HNDB?.reset();$('dailyCards').innerHTML='';$('dailyTests').innerHTML='';$('dailyPatterns').innerHTML='';$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='';$('dailyQuality').textContent='';$('dailyAudit').textContent='';$('dailyStatus').textContent=message;$('dailyScope').textContent='';for(const id of ['xcFocusStatus','xcFocusCards','xcQueryStatus','xcQueryRows','xcQueryEvents'])$(id).innerHTML='';$('dailyRun').disabled=false;}
 async function load(region,from,to,token){const rows=[];for(let cursor=from;cursor<=to;cursor=C.shift(cursor,45)){
@@ -26,7 +26,7 @@ function patternTable(draws,options){
  $('dailyPatterns').innerHTML=html;
 }
 function xcOptions(){return {date:$('dailyDate').value,region:$('dailyRegion').value,station:$('dailyStation').value,windowDays:Number($('xcWindow').value)||30,mode:$('xcMatch').value||'exact',rule:$('xcRule').value||'any',query:$('xcQuery').value.trim()};}
-function currentCache(){const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const to=date<C.shift(today(),-1)?date:C.shift(today(),-1);return cache&&cacheKey==='ALL|'+C.shift(date,-365)+'|'+to;}
+function currentCache(){const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return false;const to=date<today()?date:today();return cache&&cacheKey==='ALL|'+C.shift(date,-365)+'|'+to;}
 function renderXCLookup(){
  if(!currentCache()){$('xcQueryStatus').textContent='Tải phân tích của ngày đang chọn trước.';return;}
  const q=XCProfile.queryHistory(cache.draws,xcOptions());$('xcQueryRows').innerHTML='';$('xcQueryEvents').innerHTML='';if(q.error){$('xcQueryStatus').textContent=q.error;return;}
@@ -47,7 +47,7 @@ function renderXC(){
  }).join('');renderXCLookup();
 }
 function renderCross(){
- const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){$('dailyCrossStatus').textContent='Chọn ngày hợp lệ và tải phân tích trước.';return;}const to=date<C.shift(today(),-1)?date:C.shift(today(),-1);if(!cache||cacheKey!=='ALL|'+C.shift(date,-365)+'|'+to){$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='Hãy tải phân tích của ngày đang chọn trước.';return;}
+ const date=$('dailyDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){$('dailyCrossStatus').textContent='Chọn ngày hợp lệ và tải phân tích trước.';return;}const to=date<today()?date:today();if(!cache||cacheKey!=='ALL|'+C.shift(date,-365)+'|'+to){$('dailyCrossRows').innerHTML='';$('dailyCrossStatus').textContent='Hãy tải phân tích của ngày đang chọn trước.';return;}
  const options={date:$('dailyDate').value,region:$('dailyRegion').value,station:$('dailyStation').value,type:$('dailyCrossType').value,mode:$('dailyCrossMode').value};
  const r=C.crossRegion(cache.draws,options),names={MN:'Nam',MT:'Trung',MB:'Bắc'};
  $('dailyCrossStatus').textContent='Có '+r.signals.length+' lần hai miền nguồn cùng xuất hiện trong một ngày. '+r.hits+'/'+r.trials+' trường hợp có đủ 7 ngày theo dõi đã xuất hiện lại ở miền đích trong 7 ngày ('+pct(r.rate)+'). Mức ngẫu nhiên cùng dạng trên các cửa sổ này: '+pct(r.random)+'. Bỏ '+r.excluded+' trường hợp chưa đủ thời gian hoặc thiếu bảng đích. Đây là tần suất lịch sử, không phải xác suất kỳ tới.';
@@ -58,14 +58,14 @@ async function run(){const token=++generation;globalThis.UnifiedStats?.clear();g
  const sb=window.memberSupabase;if(!sb)throw Error('Đăng nhập để phân tích.');const user=await sb.auth.getUser();if(user.error||!user.data?.user)throw Error('Phiên đăng nhập đã hết hạn.');const access=await sb.rpc('member_access_status');if(access.error||access.data?.allowed!==true)throw Error('Tài khoản chưa có quyền truy cập.');if(token!==generation)return;
  const date=$('dailyDate').value,region=$('dailyRegion').value,station=$('dailyStation').value,method=$('dailyMethod').value,pattern=$('dailyPattern').value;
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||C.shift(date,0)!==date)throw Error('Ngày không hợp lệ.');if(date>C.shift(today(),7))throw Error('Chỉ phân tích đến 7 ngày tới; ngày xa hơn chưa có dữ liệu mới.');
- const from=C.shift(date,-365),to=date<C.shift(today(),-1)?date:C.shift(today(),-1),key='ALL|'+from+'|'+to;
- if(key!==cacheKey){const raw=[];for(const source of ['MN','MT','MB']){raw.push(...await load(source,from,to,token));if(token!==generation)return;}const prepared=C.prepare(raw,{beforeDate:date});if(token!==generation)return;cache=prepared;cache.raw=raw;cacheKey=key;}
+ const from=C.shift(date,-365),to=date<today()?date:today(),key='ALL|'+from+'|'+to;
+ if(key!==cacheKey||(to===today()&&Date.now()-cacheLoadedAt>=60000)){const raw=[];for(const source of ['MN','MT','MB']){raw.push(...await load(source,from,to,token));if(token!==generation)return;}const prepared=C.prepare(raw,{beforeDate:date});if(token!==generation)return;cache=prepared;cache.raw=raw;cacheKey=key;cacheLoadedAt=Date.now();}
  if(token!==generation)return;const options={date,region,station,method,pattern},expected=C.stations(region,date,station);
  if(!expected.length)throw Error('Đài không quay vào ngày đã chọn.');const cutoff=cache.draws.filter(d=>d.date<date),dates=new Set(cutoff.map(d=>d.date));
  $('dailyScope').textContent=fmt(date)+' · '+{MN:'Miền Nam',MT:'Miền Trung',MB:'Miền Bắc'}[region]+' · '+expected.map(s=>C.LABELS[s]||s).join(', ')+' · '+C.METHODS[method];
  $('dailyQuality').textContent='Lịch sử cả 3 miền '+fmt(from)+' – '+fmt(to)+' · '+dates.size+' ngày có ít nhất một bảng trước ngày phân tích · '+cache.draws.length+' bảng trước ngày phân tích giữ lại · Loại '+cache.suspectCount+' bảng nghi lặp nguyên bảng khác ngày.'+(cache.targetSuspectCount?' Loại thêm '+cache.targetSuspectCount+' bảng của ngày đối chiếu vì trùng nguyên bảng cũ.':'')+' Chỉ nhận bảng đủ số lượng và độ dài giải. Ngày thiếu/đài thiếu được bỏ qua khi kiểm chứng; không coi là số chưa ra. Các đài theo lịch thường lệ, cần kiểm tra riêng ngày nghỉ quay.';
  $('dailyAudit').textContent=cache.suspectGroups.length?cache.suspectGroups.map(g=>(C.LABELS[g.station]||g.station)+': '+g.dates.map(fmt).join(' / ')).join('\n'):'Không thấy nguyên bảng giải lặp khác ngày trong khoảng tải. Điều này chưa thay thế đối chiếu nguồn độc lập.';
- globalThis.UnifiedStats?.setData(cutoff,options,cache.raw);globalThis.AnalysisReview?.setData(cache.raw,cache.draws,options);globalThis.StationPairUI?.setData(cache.raw,cache.draws,options);renderXC();globalThis.HNDB?.render(cache.draws,date,cache.raw,region);const cards=[],tests=[];for(const type of Object.keys(C.TYPES)){
+ globalThis.UnifiedStats?.setData(cutoff,options,cache.raw,cache.actualDraws||[]);globalThis.AnalysisReview?.setData(cache.raw,cache.draws,options);globalThis.StationPairUI?.setData(cache.raw,cache.draws,options);renderXC();globalThis.HNDB?.render(cache.draws,date,cache.raw,region);const cards=[],tests=[];for(const type of Object.keys(C.TYPES)){
   if(token!==generation)return;$('dailyStatus').textContent='Đang kiểm chứng '+C.TYPES[type].label+' trên 90 ngày trước ngày đã chọn…';await new Promise(r=>setTimeout(r,0));
   const ranked=C.rank(cutoff,{...options,type}),checked=C.evaluate(cutoff,{...options,type});cards.push(renderCard(type,ranked,checked,method,date,[...cache.draws,...(cache.actualDraws||[])],options));tests.push(renderTests(type,checked));
   if(token!==generation)return;$('dailyCards').innerHTML=cards.join('');$('dailyTests').innerHTML=tests.join('');
