@@ -1,4 +1,5 @@
 'use strict';
+// Same-day lookup must include complete current boards, but reject partial boards.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const ctx={};vm.runInNewContext(fs.readFileSync('stats-data.js','utf8'),ctx);
 const structure={MN:[[1,6],[1,5],[1,5],[2,5],[7,5],[1,4],[3,4],[1,3],[1,2]],MB:[[1,5],[1,5],[2,5],[6,5],[4,4],[6,4],[3,3],[4,2]]};structure.MT=structure.MN;
@@ -82,4 +83,21 @@ console.log('Statistics regression checks passed: 3 regions, 2/3/4 digits, dupli
   assert.equal(get('exactGo').disabled,false);
  }
  console.log('Exact 3/4-digit lookup: duplicate fixtures and stale region responses passed.');
+})().catch(e=>{console.error(e);process.exitCode=1});
+(async()=>{
+ const html=fs.readFileSync('thong-ke-3-so.html','utf8');
+ const script=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes('const D=3;')).replace(/\}\)\(\);\s*$/, 'globalThis.exactRun=run;})();');
+ for(const complete of [true,false]){
+  const els=new Map(),get=id=>{if(!els.has(id))els.set(id,{value:'',innerHTML:'',textContent:'',disabled:false,selectedOptions:[{textContent:'Miền Bắc'}],addEventListener(){}});return els.get(id);};
+  for(const [id,value] of Object.entries({exactNum:'324',exactRegion:'MB',exactDays:'7',exactStation:'ALL',exactWeekday:'ALL'}))get(id).value=value;
+  const end=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const row=fixture('MB');row.draw_date=end;row.data.prizes.g6=['749','219','324'];if(!complete)row.data.prizes.g5.pop();
+  const env={document:{getElementById:get},XosoStats:ctx.XosoStats,URL,Date,Intl,AbortController,setTimeout,clearTimeout,fetch:async u=>{
+   assert.ok(u.searchParams.getAll('draw_date').includes('lte.'+end),'include today in lookup');return {ok:true,json:async()=>[row,row]};
+  }};
+  vm.runInNewContext(script,env);await env.exactRun();
+  assert.equal(Number(get('exactCount').textContent),complete?1:0,'count current 324 once only after complete board');
+  if(complete){assert.ok(get('exactRows').innerHTML.includes('324'));assert.equal(get('exactLast').textContent,end);}
+ }
+ console.log('Current-day G6 lookup passed: 324 included, duplicates deduplicated, partial boards excluded.');
 })().catch(e=>{console.error(e);process.exitCode=1});
