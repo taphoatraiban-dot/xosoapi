@@ -70,3 +70,5 @@ a.ok(page.includes('id="g7dbOverview"'));a.ok(page.includes('data-prize-view="G7
 console.log('G7/DB focus passed: regional widths, real G7 only, no MB G6 leakage, leading zeros, explicit source prizes, DB tails and canonical immutable ledger scopes.');
 
 a.equal(JSON.stringify(U.backtest(raw,{...o,scope:'G7'})),JSON.stringify(U.backtest(raw,{...o,scope:'DDA',sourcePrize:'g7db'})),'MB G7 validation must use real 2-digit G7, not G6');
+
+const actualBoard=draw('MB','mienbac',date,'12000');const actualView=U.overview(target,o,[actualBoard])[0];a.equal(actualView.actual,true);a.equal(actualView.db,'12000');a.equal(U.overview(target,o)[0].actual,false);a.equal(U.analyze([...target,actualBoard],o).profiles[0].items[0].number,'674');
