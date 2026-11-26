@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Thống kê lịch sử riêng giải 6 và giải đặc biệt xổ số Hà Nội, có tần suất số đầy đủ và các đuôi 2–3 số.">
+<title>Thống kê Hà Nội G6 và Đặc biệt | XOSOAPI</title>
+<style>
+:root{color-scheme:light;--red:#a9142c;--ink:#172033;--muted:#606879;--line:#e2e6ed;--panel:#fff;--bg:#f5f6fa;--green:#117346}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--red);color:#fff;padding:16px max(16px,calc((100vw - 1050px)/2))}header a{color:#fff;text-decoration:none;font-weight:700}
+main{max-width:1050px;margin:auto;padding:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 8px #15223a0a}
+h1{font-size:clamp(23px,4vw,32px);line-height:1.25;margin:8px 0}h2{font-size:21px;margin:0 0 6px}h3{font-size:17px;margin:18px 0 7px}.muted,.note{color:var(--muted)}.note{font-size:14px}
+.controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.field{display:grid;gap:4px}.field label{font-weight:700}select,button{font:inherit;padding:10px 13px;border:1px solid #cbd2de;border-radius:9px;background:#fff;color:var(--ink)}button{background:var(--red);color:white;border-color:var(--red);font-weight:750;cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--muted)}.metric b{display:block;color:var(--ink);font-size:22px}
+.tables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f3f5f8;font-size:14px}td:first-child{font-weight:750}.center th,.center td{text-align:center}.status{min-height:24px;margin:12px 0 0}.warning{color:#8a4b00;background:#fff8e9;border:1px solid #f0d59e;border-radius:9px;padding:11px}.green{color:var(--green)}
+@media(max-width:680px){main{padding:10px}.card{padding:14px}.tables{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metrics .metric:last-child{grid-column:1/-1}th,td{padding:7px 6px;font-size:14px}}
+</style>
+</head>
+<body>
+<header><a href="./index.html">← XOSOAPI · Trang chủ</a></header>
+<main>
+ <section class="card">
+  <h1>Thống kê xổ số Hà Nội: G6 &amp; Đặc biệt</h1>
+  <p class="muted">Tách riêng ba kết quả G6 (mỗi kết quả 3 chữ số) và một kết quả Đặc biệt (5 chữ số) của từng kỳ Hà Nội. Đây là thống kê lịch sử, không phải dự đoán.</p>
+  <div class="controls"><div class="field"><label for="days">Khoảng thời gian</label><select id="days"><option value="30">30 ngày</option><option value="90">90 ngày</option><option value="365" selected>365 ngày</option></select></div><button id="load">Tải dữ liệu &amp; thống kê</button></div>
+  <p id="status" class="status muted" role="status" aria-live="polite">Chọn khoảng thời gian rồi bấm Tải dữ liệu &amp; thống kê.</p>
+ </section>
+ <section class="card"><div class="metrics"><div class="metric">Kỳ có đủ G6 và ĐB<b id="drawCount">—</b></div><div class="metric">Kết quả G6 hợp lệ<b id="g6Count">—</b></div><div class="metric">Kết quả Đặc biệt hợp lệ<b id="dbCount">—</b></div></div><p id="range" class="note"></p><p id="quality" class="note"></p></section>
+ <section class="card"><h2>Giải 6</h2><p class="note">Thống kê toàn bộ số G6 3 chữ số, đuôi 2 số và chữ số cuối.</p><div class="tables"><div><h3>Top số G6 (đủ 3 chữ số)</h3><div class="scroll" id="g6Full"></div></div><div><h3>Top đuôi 2 số G6</h3><div class="scroll" id="g6Tail2"></div></div></div><h3>Tần suất chữ số theo vị trí G6</h3><div class="scroll" id="g6Digits"></div></section>
+ <section class="card"><h2>Giải Đặc biệt</h2><p class="note">Thống kê số Đặc biệt đầy đủ 5 chữ số, đuôi 3 số, đuôi 2 số và phân bố chữ số.</p><div class="tables"><div><h3>Số ĐB lặp lại (đủ 5 chữ số)</h3><div class="scroll" id="dbFull"></div></div><div><h3>Top đuôi 3 số ĐB</h3><div class="scroll" id="dbTail3"></div></div><div><h3>Top đuôi 2 số ĐB</h3><div class="scroll" id="dbTail2"></div></div><div><h3>Tần suất chữ số theo vị trí ĐB</h3><div class="scroll" id="dbDigits"></div></div></div></section>
+ <section class="card"><p class="warning"><b>Lưu ý:</b> Kỳ thiếu hoặc sai cấu trúc bị loại khỏi mẫu, không tính là số không về. Tần suất quá khứ không làm thay đổi xác suất của kỳ tiếp theo.</p></section>
+</main>
+<script>
+'use strict';
+const API='https://zigpqddlhvjbjrwhfhaa.supabase.co',KEY='sb_publishable_U8VKihgNe0M7ff5KHB3Mvg_04ifZ7ni';
+const $=id=>document.getElementById(id), WIDTHS={g6:3,db:5};
+function today(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=k=>p.find(x=>x.type===k).value;return v('year')+'-'+v('month')+'-'+v('day')}
+function shift(day,n){const d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+function key(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function getPrizes(root){let found=[];const seen=new WeakSet();function walk(x,depth=0){if(depth>16||x==null)return;if(typeof x==='string'){if(/^[\[{]/.test(x.trim()))try{walk(JSON.parse(x),depth+1)}catch(_){}return}if(typeof x!=='object'||seen.has(x))return;seen.add(x);if(Array.isArray(x)){x.forEach(v=>walk(v,depth+1));return}if(x.prizes&&typeof x.prizes==='object'){const p={};for(const [raw,values] of Object.entries(x.prizes)){const k=key(raw),name=['special','dacbiet','giaidacbiet'].includes(k)?'db':k;if(!Object.hasOwn(WIDTHS,name))continue;const a=Array.isArray(values)?values:[values];p[name]=a.map(v=>String(v??'').trim()).filter(v=>/^\d+$/.test(v)&&v.length===WIDTHS[name])}found.push(p)}for(const [k,v] of Object.entries(x))if(!['meta','metadata','info','prizes'].includes(k)&&v&&typeof v==='object')walk(v,depth+1)}walk(root);return found}
+function validDraw(row){const all=getPrizes(row.data);if(all.length!==1)return null;const p=all[0];return p.g6?.length===3&&p.db?.length===1?{date:row.draw_date,g6:p.g6,db:p.db[0]}:null}
+function table(headers,rows,target,empty='Không có dữ liệu phù hợp trong khoảng chọn.'){const t=document.createElement('table'),thead=document.createElement('thead'),tr=document.createElement('tr');for(const h of headers){const th=document.createElement('th');th.textContent=h;tr.append(th)}thead.append(tr);t.append(thead);const body=document.createElement('tbody');if(!rows.length){const r=document.createElement('tr'),c=document.createElement('td');c.colSpan=headers.length;c.textContent=empty;r.append(c);body.append(r)}else for(const values of rows){const r=document.createElement('tr');for(const v of values){const c=document.createElement('td');c.textContent=String(v);r.append(c)}body.append(r)}t.append(body);target.replaceChildren(t)}
+function rank(values,width,limit=20){const counts=new Map(),last=new Map();for(const {date,value} of values){counts.set(value,(counts.get(value)||0)+1);if(date>(last.get(value)||''))last.set(value,date)}return [...counts].filter(([,n])=>width!=='db'||n>1).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit).map(([n,c])=>[n,c,last.get(n)])}
+function digitTable(values,width,target){const counts=Array.from({length:width},()=>Array(10).fill(0));for(const {value} of values)for(let i=0;i<width;i++)counts[i][Number(value[i])]++;const rows=counts.map((col,i)=>[width===3?['Hàng trăm','Hàng chục','Hàng đơn vị'][i]:['Chục nghìn','Nghìn','Trăm','Chục','Đơn vị'][i],...col]);table(['Vị trí','0','1','2','3','4','5','6','7','8','9'],rows,target)}
+function fmtDate(s){return s?s.split('-').reverse().join('/'):'—'}
+function render(draws,invalid,from,to){const g6=draws.flatMap(d=>d.g6.map(value=>({date:d.date,value}))),db=draws.map(d=>({date:d.date,value:d.db}));$('drawCount').textContent=draws.length;$('g6Count').textContent=g6.length;$('dbCount').textContent=db.length;$('range').textContent='Khoảng dữ liệu chọn: '+fmtDate(from)+' – '+fmtDate(to)+'. Ngày thiếu/sai dữ liệu: '+invalid.length+'.';$('quality').textContent=invalid.length?'Ngày bị loại: '+invalid.sort().map(fmtDate).join(', '):'Không phát hiện kỳ thiếu hoặc sai cấu trúc trong dữ liệu tải được.';
+ table(['Số G6','Số lần','Lần gần nhất'],rank(g6,'g6'),$('g6Full'));
+ table(['Đuôi 2 số','Số lần','Lần gần nhất'],rank(g6.map(x=>({...x,value:x.value.slice(-2)})),'g6'),$('g6Tail2'));
+ table(['Số ĐB','Số lần','Lần gần nhất'],rank(db,'db'),$('dbFull'),'Không có số ĐB đầy đủ nào lặp lại trong khoảng chọn.');
+ table(['Đuôi 3 số','Số lần','Lần gần nhất'],rank(db.map(x=>({...x,value:x.value.slice(-3)})),'tail'),$('dbTail3'));
+ table(['Đuôi 2 số','Số lần','Lần gần nhất'],rank(db.map(x=>({...x,value:x.value.slice(-2)})),'tail'),$('dbTail2'));
+ digitTable(g6,3,$('g6Digits'));digitTable(db,5,$('dbDigits'))}
+async function load(){const btn=$('load'),days=Number($('days').value),to=today(),from=shift(to,-(days-1));btn.disabled=true;$('status').textContent='Đang tải kết quả Hà Nội...';$('quality').textContent='';try{const u=new URL(API+'/rest/v1/lottery_results');for(const [k,v] of Object.entries({select:'draw_date,data',region:'eq.MB',draw_date:'gte.'+from,order:'draw_date.desc',limit:'500'}))u.searchParams.set(k,v);u.searchParams.append('draw_date','lte.'+to);const res=await fetch(u,{headers:{apikey:KEY,Accept:'application/json'},cache:'no-store'});if(!res.ok)throw Error('Máy chủ trả HTTP '+res.status);const rows=await res.json();if(!Array.isArray(rows))throw Error('Dữ liệu trả về không đúng định dạng');const valid=[],invalid=[];const rowDates=new Set(rows.map(row=>row.draw_date));for(const row of rows){const d=validDraw(row);if(d)valid.push(d);else invalid.push(row.draw_date)}for(let day=from;day<=to;day=shift(day,1))if(!rowDates.has(day))invalid.push(day);valid.sort((a,b)=>a.date.localeCompare(b.date));render(valid,[...new Set(invalid)],from,to);$('status').textContent='Đã thống kê '+valid.length+' kỳ Hà Nội hợp lệ trong '+days+' ngày. Nguồn: dữ liệu kết quả lưu tại XOSOAPI.'}catch(e){$('status').textContent='Không tải được dữ liệu: '+(e.message||e)}finally{btn.disabled=false}}
+$('load').addEventListener('click',load);load();
+</script>
+</body>
+</html>
